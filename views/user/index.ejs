@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Tyre Service</title>
+    <!-- Google Maps API -->
+   <script src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&libraries=places"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .container { background: white; border-radius: 10px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); padding: 40px; width: 100%; max-width: 600px; }
+        h1 { color: #333; margin-bottom: 30px; text-align: center; font-size: 28px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; font-size: 14px; }
+        input { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 16px; transition: border 0.3s; }
+        input:focus { border-color: #667eea; outline: none; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .half { flex: 1; }
+        button { background: #667eea; color: white; border: none; padding: 14px 20px; font-size: 18px; font-weight: 600; border-radius: 6px; width: 100%; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
+        button:hover { background: #5a67d8; }
+        .note { text-align: center; margin-top: 20px; color: #888; font-size: 14px; }
+        #map { height: 250px; margin-top: 15px; border-radius: 8px; border: 2px solid #e0e0e0; }
+        .location-note { font-size: 13px; color: #666; margin-top: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Book Tyre Service</h1>
+        <form id="bookingForm">
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" name="userName" placeholder="Your full name" required>
+            </div>
+            <div class="form-group">
+                <label>Phone Number *</label>
+                <input type="tel" name="userPhone" placeholder="10-digit mobile number" required>
+            </div>
+            <div class="form-group">
+                <label>Vehicle Number</label>
+                <input type="text" name="vehicleNumber" placeholder="e.g., MH01AB1234">
+            </div>
+            <div class="form-group">
+                <label>Tyre Service / Brand *</label>
+                <input type="text" name="service" placeholder="e.g., MRF ZLX, Puncture Repair" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group half">
+                    <label>Preferred Date *</label>
+                    <input type="date" name="bookingDate" id="bookingDate" required>
+                </div>
+                <div class="form-group half">
+                    <label>Preferred Time *</label>
+                    <input type="time" name="bookingTime" required>
+                </div>
+            </div>
+
+            <!-- Hidden fields for location -->
+            <input type="hidden" name="lat" id="lat" value="">
+            <input type="hidden" name="lng" id="lng" value="">
+
+            <!-- Google Map -->
+            <div id="map"></div>
+            <div class="location-note">📍 Drag the marker to set your exact location</div>
+
+            <button type="submit">📅 Book Now</button>
+        </form>
+        <div class="note">* Required fields</div>
+    </div>
+
+    <script>
+        // Set today as minimum date
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('bookingDate').setAttribute('min', today);
+
+        // ----- Google Maps -----
+        let map, marker;
+        const defaultLat = 19.0760;
+        const defaultLng = 72.8777;
+
+        function initMap(lat, lng) {
+            const location = { lat, lng };
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: location,
+                zoom: 13,
+                mapTypeId: 'roadmap'
+            });
+            marker = new google.maps.Marker({
+                position: location,
+                map: map,
+                draggable: true,
+                animation: google.maps.Animation.DROP
+            });
+
+            // Update hidden fields when marker is dragged
+            google.maps.event.addListener(marker, 'dragend', function() {
+                const pos = marker.getPosition();
+                document.getElementById('lat').value = pos.lat();
+                document.getElementById('lng').value = pos.lng();
+            });
+
+            // Set initial values
+            document.getElementById('lat').value = lat;
+            document.getElementById('lng').value = lng;
+        }
+
+        // Get user's location, fallback to default
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    initMap(position.coords.latitude, position.coords.longitude);
+                },
+                () => {
+                    initMap(defaultLat, defaultLng);
+                }
+            );
+        } else {
+            initMap(defaultLat, defaultLng);
+        }
+
+        // ----- Form Submission -----
+        document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+
+            if (!data.lat || !data.lng) {
+                alert('❌ Please wait for the map to load and set your location.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/create-booking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    alert(`✅ Booking created! Your Booking ID: ${result.bookingId}`);
+                    e.target.reset();
+                    document.getElementById('bookingDate').setAttribute('min', today);
+                    // Reset map
+                    if (marker) {
+                        const pos = marker.getPosition();
+                        document.getElementById('lat').value = pos.lat();
+                        document.getElementById('lng').value = pos.lng();
+                    }
+                } else {
+                    alert('❌ Error: ' + (result.error || result.details || 'Unknown error'));
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+                alert('❌ Failed to create booking. Please check your network and try again.');
+            }
+        });
+    </script>
+</body>
+</html>

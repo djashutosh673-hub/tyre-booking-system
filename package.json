@@ -1,0 +1,26 @@
+{
+  "name": "tyre-booking-system",
+  "version": "1.0.0",
+  "description": "Uber-style tyre puncture booking with live tracking",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.4",
+    "dotenv": "^17.2.4",
+    "ejs": "^3.1.10",
+    "express": "^4.22.1",
+    "pg": "^8.18.0",
+    "postgres": "^3.4.8",
+    "socket.io": "^4.8.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

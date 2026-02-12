@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Track Your Mechanic | Tyre Booking</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI';}
+body{background:#f5f7fa;padding:20px;}
+.container{max-width:800px;margin:auto;}
+header{background:#2c3e50;color:white;padding:20px;border-radius:8px;margin-bottom:30px;text-align:center;}
+.card{background:white;border-radius:8px;padding:20px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+.booking-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;}
+.detail-item{background:#f8f9fa;padding:12px;border-radius:6px;}
+#map{height:400px;border-radius:8px;margin-top:15px;}
+.status-badge{padding:6px 12px;border-radius:20px;color:white;}
+.status-confirmed{background:#27ae60;}
+.status-pending{background:#f39c12;}
+.status-completed{background:#95a5a6;}
+.status-cancelled{background:#e74c3c;}
+.tracking-note{text-align:center;margin-top:15px;color:#7f8c8d;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+<h1>📍 Track Your Mechanic</h1>
+<p>Booking #<%= booking?.id || 'N/A' %></p>
+</header>
+
+<div class="card">
+
+<h2>Booking Details</h2>
+
+<div class="booking-details">
+
+<div class="detail-item">
+Customer: <strong><%= booking?.user_name || 'N/A' %></strong>
+</div>
+
+<div class="detail-item">
+Vehicle: <strong><%= booking?.vehicle_number || 'N/A' %></strong>
+</div>
+
+<div class="detail-item">
+Tyre: <strong><%= booking?.brand || '' %> <%= booking?.model || '' %></strong>
+</div>
+
+<div class="detail-item">
+Date:
+<strong>
+<%= booking?.booking_date 
+? new Date(booking.booking_date).toLocaleDateString('en-IN')
+: 'N/A' %>
+</strong>
+</div>
+
+<div class="detail-item">
+Status:
+<span class="status-badge status-<%= booking?.status %>">
+<%= booking?.status || 'pending' %>
+</span>
+</div>
+
+<div class="detail-item">
+Mechanic: <strong><%= booking?.mechanic_name || 'Not assigned yet' %></strong>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+
+<h2>Live Tracking</h2>
+
+<div id="map"></div>
+
+<div id="trackingStatus" class="tracking-note">
+<% if (booking?.status === 'confirmed' && booking?.mechanic_name) { %>
+🟢 Mechanic is on the way!
+<% } else { %>
+⏳ Mechanic not yet assigned.
+<% } %>
+</div>
+
+</div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+
+const socket = io();
+
+// safer EJS rendering into JS
+const bookingId = "<%= booking?.id || '' %>";
+
+const pickupLat = Number("<%= booking?.pickup_lat || 19.0760 %>");
+const pickupLng = Number("<%= booking?.pickup_lng || 72.8777 %>");
+
+socket.emit('join-booking', bookingId);
+
+// Create map
+const map = L.map('map').setView([pickupLat,pickupLng],12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+attribution:'© OpenStreetMap contributors'
+}).addTo(map);
+
+// pickup marker
+const pickupMarker = L.marker([pickupLat,pickupLng]).addTo(map)
+.bindPopup("📍 Your location").openPopup();
+
+let mechanicMarker=null;
+
+// listen mechanic updates
+socket.on('mechanic-location-update',(data)=>{
+
+if(!data || !data.lat || !data.lng) return;
+
+if(!mechanicMarker){
+
+mechanicMarker=L.marker([data.lat,data.lng]).addTo(map)
+.bindPopup("🔧 Mechanic location");
+
+}else{
+mechanicMarker.setLatLng([data.lat,data.lng]);
+}
+
+// fit bounds safely
+const group = new L.featureGroup([pickupMarker,mechanicMarker]);
+map.fitBounds(group.getBounds().pad(0.5));
+
+document.getElementById("trackingStatus").innerHTML =
+"🟢 Mechanic moving toward you — " + new Date().toLocaleTimeString();
+
+});
+
+// safer reload logic (only once)
+let reloadAttempted=false;
+
+setInterval(()=>{
+const status="<%= booking?.status %>";
+
+if(!mechanicMarker && status==="confirmed" && !reloadAttempted){
+
+reloadAttempted=true;
+location.reload();
+
+}
+},8000);
+
+</script>
+
+</body>
+</html>

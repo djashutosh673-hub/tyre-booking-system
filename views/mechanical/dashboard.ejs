@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanic Dashboard | Tyre Booking</title>
+    <!-- Google Maps API - Loaded asynchronously (modern, fast) -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&loading=async&callback=initMap&libraries=places" async defer></script>
+    <style>
+        /* --- Keep ALL your existing styles here --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #f5f7fa; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 24px; }
+        .status-badge { background: #27ae60; padding: 8px 15px; border-radius: 20px; font-size: 14px; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; margin-bottom: 20px; }
+        .card h2 { color: #2c3e50; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .booking-item { border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 15px; transition: all 0.2s; }
+        .booking-item:hover { box-shadow: 0 4px 12px rgba(52,152,219,0.2); border-color: #3498db; }
+        .booking-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .customer-name { font-weight: bold; color: #2c3e50; }
+        .booking-time { color: #7f8c8d; font-size: 14px; }
+        .booking-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; font-size: 14px; }
+        .detail-label { color: #7f8c8d; font-size: 12px; }
+        .detail-value { font-weight: 500; color: #2c3e50; }
+        .accept-btn { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: 500; transition: background 0.2s; width: 100%; }
+        .accept-btn:hover { background: #219a52; }
+        .current-job { background: #fef9e7; border-left: 4px solid #f39c12; }
+        .tracking-btn { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 10px; width: 100%; }
+        .tracking-btn:hover { background: #2980b9; }
+        .tracking-active { background: #e74c3c; }
+        .no-data { text-align: center; color: #95a5a6; padding: 30px; font-style: italic; }
+        .loading { text-align: center; color: #3498db; padding: 20px; }
+        #map { height: 250px; margin-top: 15px; border-radius: 8px; border: 2px solid #e0e0e0; }
+        .location-note { font-size: 12px; color: #7f8c8d; margin-top: 5px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 Mechanic Dashboard</h1>
+            <div class="status-badge">🟢 Online</div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- LEFT: Incoming Requests -->
+            <div class="card">
+                <h2>📋 Incoming Booking Requests</h2>
+                <div id="pendingBookings">
+                    <div class="loading">Loading requests...</div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Current Job & Map -->
+            <div>
+                <div class="card current-job">
+                    <h2>📍 Current Job</h2>
+                    <div id="currentJob">
+                        <div class="no-data">No job accepted yet.</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>🗺️ Live Tracking</h2>
+                    <!-- The MAP DIV - must exist BEFORE script runs -->
+                    <div id="map"></div>
+                    <div id="trackingStatus" class="location-note">Not tracking</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // ----- GLOBAL VARIABLES -----
+        let map, mechanicMarker, pickupMarker;
+        let trackingInterval = null;
+        let currentTrackingBookingId = null;
+        const socket = io();
+        const defaultLat = 19.0760;
+        const defaultLng = 72.8777;
+
+        // ----- GOOGLE MAPS CALLBACK (called when API is loaded) -----
+        window.initMap = function() {
+            const location = { lat: defaultLat, lng: defaultLng };
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: location,
+                zoom: 13,
+                mapTypeId: 'roadmap'
+            });
+            mechanicMarker = new google.maps.Marker({
+                position: location,
+                map: map,
+                draggable: false,
+                icon: { url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' }
+            });
+            console.log('✅ Google Maps initialized');
+        };
+
+        // ----- SOCKET.IO -----
+        socket.emit('join-mechanics');
+        socket.on('new-booking', (booking) => {
+            console.log('New booking received:', booking);
+            loadPendingBookings();
+        });
+
+        // ----- LOAD PENDING BOOKINGS (identical to your working version) -----
+        async function loadPendingBookings() {
+            try {
+                const response = await fetch('/api/mechanic/pending-bookings');
+                const bookings = await response.json();
+                displayPendingBookings(bookings);
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                document.getElementById('pendingBookings').innerHTML = '<div class="no-data">⚠️ Failed to load bookings</div>';
+            }
+        }
+
+        function displayPendingBookings(bookings) {
+            const container = document.getElementById('pendingBookings');
+            if (!bookings || bookings.length === 0) {
+                container.innerHTML = '<div class="no-data">No pending bookings at this time.</div>';
+                return;
+            }
+            let html = '';
+            bookings.forEach(b => {
+                html += `
+                    <div class="booking-item" data-booking-id="${b.id}">
+                        <div class="booking-header">
+                            <span class="customer-name">👤 ${b.user_name || 'Customer'}</span>
+                            <span class="booking-time">📅 ${formatDate(b.booking_date)} ${b.booking_time}</span>
+                        </div>
+                        <div class="booking-details">
+                            <div><span class="detail-label">Vehicle</span><div class="detail-value">${b.vehicle_number || 'N/A'}</div></div>
+                            <div><span class="detail-label">Tyre</span><div class="detail-value">${b.brand || ''} ${b.model || ''} (${b.size || ''})</div></div>
+                            <div><span class="detail-label">Service</span><div class="detail-value">Puncture Repair</div></div>
+                        </div>
+                        <button class="accept-btn" onclick="acceptBooking(${b.id})">✅ Accept Job</button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ----- ACCEPT BOOKING -----
+        window.acceptBooking = async function(bookingId) {
+            try {
+                const response = await fetch('/api/mechanic/accept-booking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookingId, mechanicId: 1 })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('✅ Job accepted!');
+                    loadPendingBookings();
+                    loadCurrentJob();
+                } else {
+                    alert('❌ Failed: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error accepting booking:', error);
+                alert('❌ Error accepting job');
+            }
+        };
+
+        // ----- LOAD CURRENT JOB -----
+        async function loadCurrentJob() {
+            try {
+                const response = await fetch('/api/mechanic/current-job/1');
+                const job = await response.json();
+                const container = document.getElementById('currentJob');
+                if (!job) {
+                    container.innerHTML = '<div class="no-data">No job accepted yet.</div>';
+                    stopTracking();
+                    return;
+                }
+                container.innerHTML = `
+                    <div style="margin-bottom: 10px;">
+                        <strong>Booking ID:</strong> ${job.id}<br>
+                        <strong>Customer:</strong> ${job.user_name}<br>
+                        <strong>Vehicle:</strong> ${job.vehicle_number}<br>
+                        <strong>Tyre:</strong> ${job.brand} ${job.model} (${job.size})<br>
+                        <strong>Time:</strong> ${formatDate(job.booking_date)} ${job.booking_time}
+                    </div>
+                    <button id="trackingBtn" class="tracking-btn" onclick="toggleTracking(${job.id})">🚗 Start Live Tracking</button>
+                `;
+                if (currentTrackingBookingId === job.id && trackingInterval) {
+                    document.getElementById('trackingBtn').innerText = '🛑 Stop Live Tracking';
+                    document.getElementById('trackingBtn').classList.add('tracking-active');
+                    document.getElementById('trackingStatus').innerHTML = '🟢 Tracking active for booking #' + job.id;
+                }
+            } catch (error) {
+                console.error('Error loading current job:', error);
+            }
+        }
+
+        // ----- TRACKING FUNCTIONS -----
+        window.toggleTracking = function(bookingId) {
+            if (trackingInterval && currentTrackingBookingId === bookingId) {
+                stopTracking();
+            } else {
+                startTracking(bookingId);
+            }
+        };
+
+        async function startTracking(bookingId) {
+            stopTracking();
+            try {
+                const response = await fetch('/api/mechanic/booking-location/' + bookingId);
+                const data = await response.json();
+                if (data.pickupLat && data.pickupLng && window.google) {
+                    const pickupPos = { lat: data.pickupLat, lng: data.pickupLng };
+                    if (pickupMarker) pickupMarker.setMap(null);
+                    pickupMarker = new google.maps.Marker({
+                        position: pickupPos,
+                        map: map,
+                        icon: { url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png' },
+                        title: '📍 ' + (data.customerName || 'Customer')
+                    });
+                    const bounds = new google.maps.LatLngBounds();
+                    bounds.extend(pickupPos);
+                    bounds.extend(mechanicMarker.getPosition());
+                    map.fitBounds(bounds);
+                }
+            } catch (err) {
+                console.error('Error fetching pickup location:', err);
+            }
+
+            currentTrackingBookingId = bookingId;
+            socket.emit('join-booking', bookingId);
+            
+            trackingInterval = setInterval(() => {
+                const currentPos = mechanicMarker.getPosition();
+                const newLat = currentPos.lat() + (Math.random() - 0.5) * 0.005;
+                const newLng = currentPos.lng() + (Math.random() - 0.5) * 0.005;
+                mechanicMarker.setPosition({ lat: newLat, lng: newLng });
+                map.panTo({ lat: newLat, lng: newLng });
+                socket.emit('mechanic-location', { bookingId, lat: newLat, lng: newLng });
+            }, 3000);
+
+            document.getElementById('trackingStatus').innerHTML = '🟢 Tracking active – heading to customer 📍';
+            const btn = document.getElementById('trackingBtn');
+            if (btn) {
+                btn.innerText = '🛑 Stop Live Tracking';
+                btn.classList.add('tracking-active');
+            }
+        }
+
+        function stopTracking() {
+            if (trackingInterval) clearInterval(trackingInterval);
+            trackingInterval = null;
+            currentTrackingBookingId = null;
+            const btn = document.getElementById('trackingBtn');
+            if (btn) {
+                btn.innerText = '🚗 Start Live Tracking';
+                btn.classList.remove('tracking-active');
+            }
+            document.getElementById('trackingStatus').innerHTML = 'Not tracking';
+            if (pickupMarker) pickupMarker.setMap(null);
+        }
+
+        // ----- FORMAT DATE -----
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-IN', options);
+        }
+
+        // ----- INITIAL LOAD -----
+        loadPendingBookings();
+        loadCurrentJob();
+        setInterval(loadPendingBookings, 10000);
+        setInterval(loadCurrentJob, 10000);
+    </script>
+</body>
+</html>
