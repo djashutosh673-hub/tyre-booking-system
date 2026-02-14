@@ -51,6 +51,23 @@ const Booking = {
         return result.rows[0] || null;
     },
 
+async findById(id) {
+
+    const query = `
+        SELECT b.*, u.name as user_name, u.vehicle_number
+        FROM bookings b
+        LEFT JOIN users u ON u.id = b.user_id
+        WHERE b.id = $1
+    `;
+
+    const result = await db.query(query, [id]);
+
+    return result.rows[0];
+
+}
+,
+
+
     async updateBookingStatus(id, status) {
         const query = `
             UPDATE bookings

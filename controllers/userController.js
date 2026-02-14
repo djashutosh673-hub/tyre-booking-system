@@ -70,20 +70,22 @@ exports.createBooking = async (req, res) => {
 // ⭐ Render Tracking Page (VERY IMPORTANT)
 // ============================================
 
+// ⭐ Render tracking page with REAL booking data
 exports.getTrackingPage = async (req, res) => {
 
     const bookingId = req.params.id;
 
     try {
 
+        const result = await BookingModel.findById(bookingId);
+
         res.render('user/track', {
-            booking: { id: bookingId }
+            booking: result || { id: bookingId }
         });
 
     } catch (err) {
 
         console.error("Tracking page error:", err);
-
         res.status(500).send("Tracking page error");
 
     }
