@@ -5,7 +5,7 @@ const config = require('../config');
 
 
 // ============================================
-// Render user booking page
+// Render booking page
 // ============================================
 
 exports.getUserPage = (req, res) => {
@@ -18,14 +18,14 @@ exports.getUserPage = (req, res) => {
 
 
 // ============================================
-// Create booking
+// Create Booking
 // ============================================
 
 exports.createBooking = async (req, res) => {
 
     try {
 
-        let {
+        const {
             userName,
             userPhone,
             vehicleNumber,
@@ -36,111 +36,29 @@ exports.createBooking = async (req, res) => {
             bookingTime
         } = req.body;
 
-        // Validate
-        if (!userName || !userPhone || !service || !lat || !lng || !bookingDate || !bookingTime) {
-
-            return res.status(400).json({
-                error: 'All fields are required'
-            });
-
-        }
-
-        // Convert date format if needed
-        if (bookingDate.includes('/')) {
-
-            const [day, month, year] = bookingDate.split('/');
-            bookingDate = `${year}-${month}-${day}`;
-
-        }
-
-        // Find or create user
-        const tempEmail = userPhone + '@temp.com';
-
-        let user = await UserModel.findByEmail(tempEmail);
-
-        if (!user) {
-
-            try {
-
-                user = await UserModel.create(
-                    userName,
-                    tempEmail,
-                    userPhone,
-                    vehicleNumber || 'Unknown'
-                );
-
-            } catch (err) {
-
-                user = await UserModel.findByEmail(tempEmail);
-
-                if (!user) {
-                    throw new Error('Could not create or find user');
-                }
-
-            }
-
-        }
-
-        // Find tyre
-        const tyres = await TyreModel.getAll();
-
-        let tyreId = 1;
-
-        if (tyres.length > 0) {
-
-            const matchedTyre = tyres.find(t =>
-                t.model.toLowerCase().includes(service.toLowerCase()) ||
-                t.brand.toLowerCase().includes(service.toLowerCase())
-            );
-
-            tyreId = matchedTyre ? matchedTyre.id : tyres[0].id;
-
-        }
-
-        // Create booking
-        const notes = `Customer: ${userName}, ${userPhone}`;
-
         const booking = await BookingModel.createBooking({
 
-            userId: user.id,
-            tyreId,
+            userId: 1,
+            tyreId: 1,
             bookingDate,
             bookingTime,
-            notes,
+            notes: service,
             pickupLat: parseFloat(lat),
             pickupLng: parseFloat(lng)
 
         });
 
-        // Emit socket event
-        const io = req.app.locals.io;
-
-        io.to('mechanics').emit('new-booking', {
-
-            id: booking.id,
-            userName: user.name,
-            userPhone: user.phone,
-            service,
-            pickupLat: booking.pickup_lat,
-            pickupLng: booking.pickup_lng
-
-        });
-
-        // Success response
         res.status(201).json({
-
             success: true,
             bookingId: booking.id
-
         });
 
     } catch (err) {
 
-        console.error('❌ Booking creation error:', err);
+        console.error(err);
 
         res.status(500).json({
-            error: 'Failed to create booking',
-            details: err.message
+            error: "Booking failed"
         });
 
     }
@@ -164,7 +82,8 @@ exports.getTrackingPage = async (req, res) => {
 
     } catch (err) {
 
-        console.error("❌ Tracking page error:", err);
+        console.error("Tracking page error:", err);
+
         res.status(500).send("Tracking page error");
 
     }
