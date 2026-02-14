@@ -8,7 +8,7 @@ router.get('/', userController.getUserPage);
 // Create booking API
 router.post('/create-booking', userController.createBooking);
 
-// ⭐ VERY IMPORTANT — tracking route
+// ⭐ Tracking route
 router.get('/track/:id', userController.getTrackingPage);
 
 module.exports = router;

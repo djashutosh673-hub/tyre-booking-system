@@ -1,22 +1,35 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Create PostgreSQL connection
+// ============================================
+// PostgreSQL Connection (Supabase)
+// ============================================
+
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+
+    // ⭐ Use SUPABASE connection string
+    connectionString: process.env.SUPABASE_DB_URL,
+
     ssl: {
         rejectUnauthorized: false
     }
+
 });
 
-// Auto connect + auto create table
+
+// ============================================
+// Auto Connect + Auto Table Creation
+// ============================================
+
 (async () => {
+
     try {
+
         const client = await pool.connect();
 
         console.log('✅ PostgreSQL Connected Successfully');
 
-        // AUTO CREATE USERS TABLE (if not exists)
+        // AUTO CREATE USERS TABLE
         await client.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -31,12 +44,20 @@ const pool = new Pool({
         console.log('✅ Users table ready');
 
         client.release();
+
     } catch (err) {
+
         console.error('❌ DB Connection Error:', err);
+
     }
+
 })();
 
-// Export query function
+
+// ============================================
+// Export Query Helper
+// ============================================
+
 module.exports = {
     query: (text, params) => pool.query(text, params)
 };
