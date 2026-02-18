@@ -26,18 +26,19 @@ const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 
 // ============================================
 // ROUTES
 // ============================================
 const userRoutes = require('./routes/userRoutes');
 const mechanicRoutes = require('./routes/mechanicRoutes');
-const authRoutes = require('./routes/authRoutes'); // ✅ LOGIN ROUTES ADDED
+const authRoutes = require('./routes/authRoutes');
 
 // ============================================
 // APP INIT
 // ============================================
-const app = express();
+const app = express(); // ✅ CREATE APP FIRST
 const server = http.createServer(app);
 const io = socketIo(server);
 
@@ -55,15 +56,22 @@ app.set('views', path.join(__dirname, 'views'));
 // ============================================
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.json()); // ✅ IMPORTANT FOR LOGIN JSON
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ✅ SESSION MIDDLEWARE
+app.use(session({
+    secret: 'secret-key',
+    resave: false,
+    saveUninitialized: true
+}));
 
 // ============================================
 // ROUTES
 // ============================================
+app.use('/', authRoutes);     // ✅ LOGIN FIRST
 app.use('/', userRoutes);
 app.use('/', mechanicRoutes);
-app.use('/', authRoutes); // ✅ LOGIN ROUTE CONNECTED
 
 // ============================================
 // SOCKET.IO
@@ -94,7 +102,9 @@ io.on('connection', (socket) => {
 // ============================================
 // SERVER LISTEN
 // ============================================
-const PORT = process.env.PORT || 3000;
+const PORT = 3001;
+
+
 server.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
