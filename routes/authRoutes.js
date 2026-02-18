@@ -9,18 +9,24 @@ router.get('/login', (req, res) => {
 // Handle login submit
 router.post('/login', (req, res) => {
 
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     // SIMPLE LOGIN CHECK
-    if (username === "djashutosh673@gmail.com" && password === "1234") {
+    if (email === "djashutosh673@gmail.com" && password === "1234") {
 
-        req.session.user = username;
+        req.session.user = email;
 
-        res.json({ success: true });
+        res.json({
+            success: true,
+            message: "Login successful"
+        });
 
     } else {
 
-        res.json({ success: false, message: "Invalid login" });
+        res.json({
+            success: false,
+            message: "Invalid login"
+        });
 
     }
 });
