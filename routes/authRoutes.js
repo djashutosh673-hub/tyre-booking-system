@@ -12,7 +12,7 @@ router.post('/login', (req, res) => {
     const { username, password } = req.body;
 
     // SIMPLE LOGIN CHECK
-    if (username === "admin" && password === "1234") {
+    if (username === "djashutosh673@gmail.com" && password === "1234") {
 
         req.session.user = username;
 
