@@ -32,6 +32,7 @@ const bodyParser = require('body-parser');
 // ============================================
 const userRoutes = require('./routes/userRoutes');
 const mechanicRoutes = require('./routes/mechanicRoutes');
+const authRoutes = require('./routes/authRoutes'); // ✅ LOGIN ROUTES ADDED
 
 // ============================================
 // APP INIT
@@ -54,6 +55,7 @@ app.set('views', path.join(__dirname, 'views'));
 // ============================================
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(express.json()); // ✅ IMPORTANT FOR LOGIN JSON
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================
@@ -61,6 +63,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ============================================
 app.use('/', userRoutes);
 app.use('/', mechanicRoutes);
+app.use('/', authRoutes); // ✅ LOGIN ROUTE CONNECTED
 
 // ============================================
 // SOCKET.IO
