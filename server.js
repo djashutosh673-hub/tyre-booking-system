@@ -132,7 +132,7 @@ io.on('connection', (socket) => {
 // DEFAULT ROUTE
 // ============================================
 app.get('/', (req, res) => {
-    res.send('✅ Server running. Go to /book');
+    res.redirect('/book');
 });
 
 // ============================================
