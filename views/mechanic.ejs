@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mechanic Panel</title>
+<style>
+body{font-family:sans-serif;background:#f5f7fa;padding:20px;}
+.card{background:white;padding:15px;margin:10px 0;border-radius:8px;}
+button{padding:8px 15px;background:#27ae60;color:white;border:none;border-radius:5px;}
+</style>
+</head>
+<body>
+
+<h2>👨‍🔧 Mechanic Dashboard</h2>
+
+<% if(bookings.length === 0){ %>
+<p>No bookings available</p>
+<% } %>
+
+<% bookings.forEach(b => { %>
+
+<div class="card">
+<p><strong>ID:</strong> <%= b.id %></p>
+<p><strong>Customer:</strong> <%= b.name %></p>
+<p><strong>Vehicle:</strong> <%= b.vehicle %></p>
+<p><strong>Service:</strong> <%= b.service %></p>
+<p><strong>Status:</strong> <%= b.status %></p>
+
+<% if(b.status === 'pending'){ %>
+<button onclick="acceptBooking('<%= b.id %>')">
+Accept Booking
+</button>
+<% } else { %>
+<p>✅ Already Assigned</p>
+<% } %>
+
+</div>
+
+<% }) %>
+
+<script>
+function acceptBooking(id){
+    fetch(`/api/accept-booking/${id}`)
+    .then(res => res.json())
+    .then(data => {
+        alert("Booking Accepted!");
+        location.reload();
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mechanic Live Tracking</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+body{font-family:sans-serif;text-align:center;padding:20px;}
+#map{height:400px;margin-top:20px;}
+button{padding:10px 20px;margin-top:10px;}
+</style>
+</head>
+<body>
+
+<h2>👨‍🔧 Mechanic Live Location</h2>
+
+<input type="text" id="bookingId" placeholder="Enter Booking ID">
+<br>
+<button onclick="startTracking()">Start Tracking</button>
+
+<div id="map"></div>
+
+   
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+const socket = io();
+
+let map = L.map('map').setView([26.9124, 75.7873], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap contributors'
+}).addTo(map);
+
+let marker = null;
+
+function startTracking(){
+
+    const bookingId = document.getElementById("bookingId").value;
+
+    if(!bookingId){
+        alert("Enter Booking ID");
+        return;
+    }
+
+    if (!navigator.geolocation) {
+        alert("Geolocation not supported");
+        return;
+    }
+
+    navigator.geolocation.watchPosition((position) => {
+
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        console.log("📍 Real Location:", lat, lng);
+
+        // update map
+        if(!marker){
+            marker = L.marker([lat, lng]).addTo(map)
+            .bindPopup("👨‍🔧 You (Mechanic)").openPopup();
+        } else {
+            marker.setLatLng([lat, lng]);
+        }
+
+        map.setView([lat, lng], 15);
+
+        // 🔥 send to server
+        socket.emit('mechanic-location', {
+            bookingId,
+            lat,
+            lng
+        });
+
+    }, (error) => {
+        console.error(error);
+        alert("Location access denied ❌");
+    }, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 5000
+    });
+}
+</script>
+
+</body>
+</html>

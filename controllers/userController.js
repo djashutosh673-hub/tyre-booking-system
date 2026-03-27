@@ -1,30 +1,22 @@
-const BookingModel = require('../models/BookingModel');
-const UserModel = require('../models/UserModel');
-const TyreModel = require('../models/TyreModel');
+const supabase = require('../config/supabase');
 const config = require('../config');
-
 
 // ============================================
 // Render booking page
 // ============================================
 
 exports.getUserPage = (req, res) => {
-
     res.render('user/index', {
         googleMapsApiKey: config.googleMapsApiKey
     });
-
 };
 
-
 // ============================================
-// Create Booking
+// Create Booking (FIXED)
 // ============================================
 
 exports.createBooking = async (req, res) => {
-
     try {
-
         const {
             userName,
             userPhone,
@@ -36,58 +28,62 @@ exports.createBooking = async (req, res) => {
             bookingTime
         } = req.body;
 
-        const booking = await BookingModel.createBooking({
+        const { data, error } = await supabase
+            .from('bookings')
+            .insert([
+                {
+                    name: userName,
+                    phone: userPhone,
+                    vehicle: vehicleNumber,
+                    service: service,
+                    booking_date: bookingDate,
+                    booking_time: bookingTime,
+                    pickup_lat: parseFloat(lat),
+                    pickup_lng: parseFloat(lng)
+                }
+            ])
+            .select();
 
-            userId: 1,
-            tyreId: 1,
-            bookingDate,
-            bookingTime,
-            notes: service,
-            pickupLat: parseFloat(lat),
-            pickupLng: parseFloat(lng)
-
-        });
+        if (error) {
+            console.log("❌ Supabase Error:", error);
+            return res.status(500).json({ error: "Booking failed" });
+        }
 
         res.status(201).json({
             success: true,
-            bookingId: booking.id
+            bookingId: data[0].id
         });
 
     } catch (err) {
-
-        console.error(err);
-
-        res.status(500).json({
-            error: "Booking failed"
-        });
-
+        console.error("❌ Server Error:", err);
+        res.status(500).json({ error: "Booking failed" });
     }
-
 };
 
-
 // ============================================
-// ⭐ Render Tracking Page (VERY IMPORTANT)
+// Tracking Page
 // ============================================
 
-// ⭐ Render tracking page with REAL booking data
 exports.getTrackingPage = async (req, res) => {
-
     const bookingId = req.params.id;
 
     try {
+        const { data, error } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('id', bookingId)
+            .single();
 
-        const result = await BookingModel.findById(bookingId);
+        if (error) {
+            console.log(error);
+        }
 
         res.render('user/track', {
-            booking: result || { id: bookingId }
+            booking: data || { id: bookingId }
         });
 
     } catch (err) {
-
         console.error("Tracking page error:", err);
         res.status(500).send("Tracking page error");
-
     }
-
 };

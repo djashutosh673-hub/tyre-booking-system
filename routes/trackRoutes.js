@@ -1,25 +1,44 @@
 const express = require('express');
 const router = express.Router();
-const BookingModel = require('../models/BookingModel');
 
 // Customer tracking page
-router.get('/track/:bookingId', async (req, res) => {
+router.get('/track/:bookingId', (req, res) => {
     try {
         const bookingId = req.params.bookingId;
-        const booking = await BookingModel.getBookingById(bookingId);
-        
-        if (!booking) {
-            return res.status(404).send('Booking not found');
-        }
 
-        res.render('user/track', { 
-            booking: booking,
-            googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '' 
-        });
+        // 🔥 get data from memory
+        const updated = req.app.locals.bookings?.[bookingId] || {};
+
+        const booking = {
+            id: bookingId,
+            name: updated.name || "bipana",
+            vehicle: updated.vehicle || "ktm",
+            service: updated.service || "car",
+            booking_date: updated.booking_date || "2026-03-28",
+            booking_time: updated.booking_time || "02:02",
+            pickup_lat: updated.pickup_lat || 26.9124,
+            pickup_lng: updated.pickup_lng || 75.7873,
+            status: updated.status || "pending",
+            mechanic: updated.mechanic || null
+        };
+
+        res.render('track', { booking });
+
     } catch (err) {
         console.error('❌ Tracking page error:', err);
         res.status(500).send('Server error');
     }
+});
+router.get('/track/:id', (req, res) => {
+    const id = req.params.id;
+
+    BookingModel.getBookingById(id, (err, booking) => {
+        if(err || !booking){
+            return res.send("Booking not found");
+        }
+
+        res.render('track', { booking });
+    });
 });
 
 module.exports = router;

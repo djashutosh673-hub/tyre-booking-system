@@ -1,8 +1,7 @@
 // ============================================
-// ENVIRONMENT & DATABASE
+// ENVIRONMENT
 // ============================================
 require('dotenv').config();
-const db = require('./config/db');
 
 console.log('🚀 Starting server.js');
 
@@ -14,7 +13,7 @@ process.on('uncaughtException', (err) => {
     process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
     console.error('❌ Unhandled Rejection:', reason);
 });
 
@@ -29,21 +28,18 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 
 // ============================================
-// ROUTES
+// ROUTES & MODELS
 // ============================================
 const userRoutes = require('./routes/userRoutes');
-const mechanicRoutes = require('./routes/mechanicRoutes');
 const authRoutes = require('./routes/authRoutes');
+const BookingModel = require('./models/BookingModel');
 
 // ============================================
 // APP INIT
 // ============================================
-const app = express(); // ✅ CREATE APP FIRST
+const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-
-// Make io accessible to controllers
-app.locals.io = io;
 
 // ============================================
 // VIEW ENGINE
@@ -59,7 +55,7 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ✅ SESSION MIDDLEWARE
+// SESSION
 app.use(session({
     secret: 'secret-key',
     resave: false,
@@ -67,11 +63,49 @@ app.use(session({
 }));
 
 // ============================================
+// API: GET BOOKING (DB)
+// ============================================
+app.get('/api/bookings/:id', (req, res) => {
+    const id = req.params.id;
+
+    BookingModel.getBookingById(id, (err, booking) => {
+        if (err || !booking) {
+            return res.json({ error: "Booking not found" });
+        }
+
+        res.json(booking);
+    });
+});
+
+// ============================================
+// API: ACCEPT BOOKING (DB)
+// ============================================
+app.get('/api/accept-booking/:id', (req, res) => {
+    const id = req.params.id;
+
+    BookingModel.acceptBooking(id, "Rahul Mechanic", (err) => {
+        if (err) {
+            console.error(err);
+            return res.send("DB Error");
+        }
+
+        console.log(`✅ Booking ${id} accepted`);
+
+        // 🔥 Real-time update
+        io.to(id).emit('booking-updated', {
+            status: "assigned",
+            mechanic: "Rahul Mechanic"
+        });
+
+        res.json({ message: "Booking accepted successfully" });
+    });
+});
+
+// ============================================
 // ROUTES
 // ============================================
-app.use('/', authRoutes);     // ✅ LOGIN FIRST
+app.use('/', authRoutes);
 app.use('/', userRoutes);
-app.use('/', mechanicRoutes);
 
 // ============================================
 // SOCKET.IO
@@ -79,14 +113,9 @@ app.use('/', mechanicRoutes);
 io.on('connection', (socket) => {
     console.log('🔌 New client connected:', socket.id);
 
-    socket.on('join-mechanics', () => {
-        socket.join('mechanics');
-        console.log(`👨‍🔧 Mechanic joined room: mechanics`);
-    });
-
     socket.on('join-booking', (bookingId) => {
         socket.join(bookingId);
-        console.log(`📱 User joined room: ${bookingId}`);
+        console.log(`📱 User joined booking room: ${bookingId}`);
     });
 
     socket.on('mechanic-location', (data) => {
@@ -100,10 +129,16 @@ io.on('connection', (socket) => {
 });
 
 // ============================================
-// SERVER LISTEN
+// DEFAULT ROUTE
+// ============================================
+app.get('/', (req, res) => {
+    res.send('✅ Server running. Go to /book');
+});
+
+// ============================================
+// SERVER START
 // ============================================
 const PORT = 3001;
-
 
 server.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);

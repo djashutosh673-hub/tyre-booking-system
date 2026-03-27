@@ -1,4 +1,4 @@
-const BookingModel = require('../models/BookingModel');
+
 const db = require('../config/db');
 const config = require('../config');
 

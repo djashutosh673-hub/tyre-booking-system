@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Track Your Mechanic</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI';}
+body{background:#f5f7fa;padding:20px;}
+.container{max-width:800px;margin:auto;}
+header{background:#2c3e50;color:white;padding:20px;border-radius:8px;margin-bottom:30px;text-align:center;}
+.card{background:white;border-radius:8px;padding:20px;margin-bottom:20px;box-shadow:0 2px 10px rgba(0,0,0,0.1);}
+.booking-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;}
+.detail-item{background:#f8f9fa;padding:12px;border-radius:6px;}
+#map{height:400px;border-radius:8px;margin-top:15px;}
+.status-badge{padding:6px 12px;border-radius:20px;color:white;background:#f39c12;}
+.tracking-note{text-align:center;margin-top:15px;color:#7f8c8d;}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+<h1>📍 Track Your Mechanic</h1>
+<p>Booking #<%= booking.id %></p>
+</header>
+
+<div class="card">
+<h2>Booking Details</h2>
+
+<div class="booking-details">
+
+<div class="detail-item">Customer: <strong><%= booking.name %></strong></div>
+<div class="detail-item">Vehicle: <strong><%= booking.vehicle %></strong></div>
+<div class="detail-item">Service: <strong><%= booking.service %></strong></div>
+<div class="detail-item">Date: <strong><%= booking.booking_date %></strong></div>
+<div class="detail-item">Time: <strong><%= booking.booking_time %></strong></div>
+
+<div class="detail-item">
+Status: <span class="status-badge"><%= booking.status %></span>
+</div>
+
+<div class="detail-item">
+Mechanic: 
+<strong id="mechanicName">
+<%= booking.mechanic ? booking.mechanic : "Not assigned yet" %>
+</strong>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+<h2>Live Tracking</h2>
+
+<div id="map"></div>
+
+<div id="trackingStatus" class="tracking-note">
+⏳ Mechanic not yet assigned.
+</div>
+
+</div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+// ✅ FIRST define socket
+const socket = io();
+
+const bookingId = "<%= booking.id %>";
+const pickupLat = "<%= booking.pickup_lat %>";
+const pickupLng = "<%= booking.pickup_lng %>";
+
+socket.emit('join-booking', bookingId);
+
+// ✅ SINGLE listener (clean)
+socket.on('booking-updated', (data) => {
+    console.log("🔥 Booking updated:", data);
+
+    document.querySelector(".status-badge").innerText = data.status;
+    document.getElementById("mechanicName").innerText = data.mechanic;
+
+    document.getElementById("trackingStatus").innerHTML =
+        "🟢 Mechanic assigned: " + data.mechanic;
+});
+
+// Map
+const map = L.map('map').setView([pickupLat, pickupLng], 12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap contributors'
+}).addTo(map);
+
+const pickupMarker = L.marker([pickupLat, pickupLng])
+.addTo(map)
+.bindPopup("📍 Your location")
+.openPopup();
+
+let mechanicMarker = null;
+
+socket.on('mechanic-location-update', (data) => {
+
+    if(!data || !data.lat || !data.lng) return;
+
+    if(!mechanicMarker){
+        mechanicMarker = L.marker([data.lat, data.lng])
+        .addTo(map)
+        .bindPopup("🔧 Mechanic location");
+    } else {
+        mechanicMarker.setLatLng([data.lat, data.lng]);
+    }
+
+    const group = new L.featureGroup([pickupMarker, mechanicMarker]);
+    map.fitBounds(group.getBounds().pad(0.5));
+
+    document.getElementById("trackingStatus").innerHTML =
+    "🟢 Mechanic moving — " + new Date().toLocaleTimeString();
+});
+</script>
+
+</body>
+</html>
