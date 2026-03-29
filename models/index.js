@@ -13,10 +13,10 @@ const sequelize = new Sequelize(config.databaseUrl, {
   },
 });
 
-const User = require('./User')(sequelize);
-const Tyre = require('./Tyre')(sequelize);
+const User = require('./user')(sequelize);
+const Tyre = require('./tyre')(sequelize);
 const Booking = require('./Booking')(sequelize);
-const Order = require('./Order')(sequelize);
+const Order = require('./order')(sequelize);
 
 // Associations
 User.hasMany(Order);
