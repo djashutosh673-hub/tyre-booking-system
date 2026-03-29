@@ -1,66 +1,51 @@
-const tyres = [
-    { id: 1, name: "Michelin Pilot", size: "205/55R16", price: 8000, ev: false },
-    { id: 2, name: "Bridgestone Eco", size: "215/60R16", price: 7000, ev: true },
-    { id: 3, name: "Pirelli Sport", size: "225/45R17", price: 12000, ev: false },
-    { id: 4, name: "Yokohama EV", size: "205/55R16", price: 9000, ev: true }
+const vehicles = [
+  "Alto", "Audi", "Activa", "Apache",
+  "Baleno", "BMW", "Bullet",
+  "Creta", "Ciaz",
+  "Duke", "Duster"
 ];
 
-let cart = [];
+const input = document.getElementById("vehicleSearch");
+const suggestions = document.getElementById("suggestions");
 
-function renderProducts(data) {
-    const container = document.getElementById("products");
-    container.innerHTML = "";
+input.addEventListener("input", () => {
+  const value = input.value.toLowerCase();
+  suggestions.innerHTML = "";
 
-    data.forEach(tyre => {
-        container.innerHTML += `
-            <div class="product-card">
-                <h3>${tyre.name}</h3>
-                <p>${tyre.size}</p>
-                <p>₹${tyre.price}</p>
-                <button onclick="addToCart(${tyre.id})">Add to Cart</button>
-            </div>
-        `;
-    });
-}
+  if (!value) {
+    suggestions.style.display = "none";
+    return;
+  }
 
-function addToCart(id) {
-    const item = tyres.find(t => t.id === id);
-    cart.push(item);
-    updateCart();
-}
+  const filtered = vehicles.filter(v =>
+    v.toLowerCase().startsWith(value)
+  );
 
-function updateCart() {
-    const cartDiv = document.getElementById("cart-items");
-    const totalDiv = document.getElementById("total");
-    const count = document.getElementById("cart-count");
+  filtered.forEach(v => {
+    const div = document.createElement("div");
+    div.classList.add("suggestion-item");
+    div.innerText = v;
 
-    cartDiv.innerHTML = "";
-    let total = 0;
+    div.onclick = () => {
+      window.location.href = `/shop?vehicle=${v}`;
+    };
+suggestions.addEventListener("click", (e) => {
+  if (e.target.classList.contains("suggestion-item")) {
+    const selectedVehicle = e.target.innerText;
 
-    cart.forEach(item => {
-        cartDiv.innerHTML += `<p>${item.name} - ₹${item.price}</p>`;
-        total += item.price;
-    });
+    // 🔥 redirect with vehicle
+    window.location.href = `/shop?vehicle=${selectedVehicle}`;
+  }
+});
+    suggestions.appendChild(div);
+  });
 
-    totalDiv.innerText = "Total: ₹" + total;
-    count.innerText = cart.length;
-}
+  suggestions.style.display = "block";
+});
 
-function applyFilter() {
-    const size = document.getElementById("sizeFilter").value;
-    const ev = document.getElementById("evFilter").checked;
-
-    let filtered = tyres;
-
-    if (size) filtered = filtered.filter(t => t.size === size);
-    if (ev) filtered = filtered.filter(t => t.ev);
-
-    renderProducts(filtered);
-}
-
-// CART TOGGLE
-function toggleCart() {
-    document.getElementById("cartSidebar").classList.toggle("active");
-}
-
-renderProducts(tyres);
+/* 👇 PASTE HERE (BOTTOM) */
+document.addEventListener("click", (e) => {
+  if (!document.querySelector(".search-container").contains(e.target)) {
+    suggestions.style.display = "none";
+  }
+});

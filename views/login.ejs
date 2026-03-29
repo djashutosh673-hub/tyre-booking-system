@@ -1,30 +1,34 @@
-<form id="loginForm">
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="password" id="password" placeholder="Password" required>
-    <button type="submit">Login</button>
-</form>
+<%- include('../partials/header') %>
 
-<script>
-document.getElementById('loginForm').addEventListener('submit', async function(e){
+<div class="auth-container">
+  <div class="auth-box">
 
-    e.preventDefault();
+    <h2>Login to TyreHub</h2>
 
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    <form action="/auth/login" method="POST">
 
-    const res = await fetch('/login', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email, password })
-    });
+      <div class="form-group">
+        <input type="email" name="email" required>
+        <label>Email</label>
+      </div>
 
-    const data = await res.json();
+      <div class="form-group">
+        <input type="password" name="password" required>
+        <label>Password</label>
+      </div>
 
-    alert(data.message);
+      <button type="submit" class="submit-btn">
+        Login
+      </button>
 
-    // ✅ AUTO REDIRECT AFTER LOGIN
-    if(data.success){
-        window.location.href = "/";
-    }
-});
-</script>
+    </form>
+
+    <p class="auth-switch">
+      Don't have an account? 
+      <a href="/auth/register">Register</a>
+    </p>
+
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

@@ -1,19 +1,58 @@
 <%- include('partials/header') %>
-<section class="container" style="padding: 2rem 0;">
-    <h2>All Tyres</h2>
-    <div class="tyre-grid">
-        <% tyres.forEach(tyre => { %>
-        <div class="tyre-card">
-            <div class="tyre-img"><i class="fas fa-tire" style="font-size: 3rem; color: #1e3c72;"></i></div>
-            <h3><%= tyre.brand %> <%= tyre.model %></h3>
-            <p class="tyre-size"><%= tyre.size %></p>
-            <p class="tyre-type"><%= tyre.type %></p>
-            <div class="tyre-price">₹<%= tyre.price.toLocaleString() %></div>
-            <form action="/cart/add/<%= tyre.id %>" method="POST">
-                <button type="submit" class="btn-small">Add to Cart</button>
-            </form>
+
+<div class="shop-wrapper">
+
+  <h1 class="shop-title">Explore Tyres</h1>
+
+  <% if (vehicle) { %>
+    <h2 class="selected-vehicle">
+      Showing tyres for <%= vehicle %>
+    </h2>
+  <% } %>
+
+  <!-- SEARCH -->
+  <div class="search-container">
+    <input type="text" id="vehicleSearch" placeholder="Search vehicle...">
+    <div id="suggestions"></div>
+  </div>
+
+  <!-- GRID -->
+  <div class="tyre-grid">
+    <% tyres.forEach(tyre => { %>
+      <div class="tyre-card">
+
+        <div class="badge">Best Seller</div>
+
+        <div class="tyre-image-box">
+          <img src="/images/tyre.png" alt="tyre">
         </div>
-        <% }) %>
-    </div>
-</section>
+
+        <div class="tyre-info">
+          <h3><%= tyre.name || "Premium Tyre" %></h3>
+
+          <p class="size"><%= tyre.size %></p>
+          <p class="category"><%= tyre.category || "All Season" %></p>
+
+          <div class="rating">
+            ⭐⭐⭐⭐☆ <span>(120)</span>
+          </div>
+
+          <div class="bottom-section">
+            <div>
+              <span class="price">₹<%= tyre.price %></span>
+              <span class="old-price">₹<%= tyre.price + 1500 %></span>
+            </div>
+
+            <button>Add</button>
+          </div>
+        </div>
+
+      </div>
+    <% }) %>
+  </div>
+
+</div>
+
+<script src="/js/shop.js"></script>
+
 <%- include('partials/footer') %>

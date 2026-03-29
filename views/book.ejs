@@ -1,74 +1,53 @@
 <%- include('partials/header') %>
-<div class="container" style="padding: 2rem 0; max-width: 600px;">
-  <h2>Book Tyre Service</h2>
-  <% if(error) { %><div style="color:red; margin-bottom:1rem;"><%= error %></div><% } %>
-  <form action="/booking/book" method="POST" id="bookingForm">
-    <div class="form-group">
-      <label>Your Name *</label>
-      <input type="text" name="name" required>
-    </div>
-    <div class="form-group">
-      <label>Vehicle Model *</label>
-      <input type="text" name="vehicle" required>
-    </div>
-    <div class="form-group">
-      <label>Repair Type *</label>
-      <select name="repair" required>
-        <option>Puncture Repair</option>
-        <option>Tyre Replacement</option>
-        <option>Rotation & Balancing</option>
-        <option>General Checkup</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Phone *</label>
-      <input type="text" name="phone" required>
-    </div>
-    <div class="form-group">
-      <label>Address</label>
-      <textarea name="address" rows="3" id="address"></textarea>
-    </div>
 
-    <!-- Location fields (hidden, auto-filled) -->
-    <input type="hidden" name="latitude" id="latitude">
-    <input type="hidden" name="longitude" id="longitude">
+<div class="form-container">
+  <div class="form-box">
 
-    <button type="button" id="getLocationBtn" class="btn-secondary" style="margin-bottom: 1rem;">📍 Get My Current Location</button>
-    <div id="locationStatus" style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;"></div>
+    <h2>Book Tyre Service</h2>
 
-    <button type="submit">Book Now</button>
-  </form>
+    <form action="/booking/book" method="POST">
+
+      <div class="form-group">
+        <input type="text" name="name" required>
+        <label>Your Name</label>
+      </div>
+
+      <div class="form-group">
+        <input type="text" name="vehicleModel" required>
+        <label>Vehicle Model</label>
+      </div>
+
+      <div class="form-group">
+        <select name="repairType" required>
+          <option value="" disabled selected></option>
+          <option>Puncture Repair</option>
+          <option>Tyre Replacement</option>
+          <option>Wheel Alignment</option>
+        </select>
+        <label>Repair Type</label>
+      </div>
+
+      <div class="form-group">
+        <input type="text" name="phone" required>
+        <label>Phone</label>
+      </div>
+
+      <div class="form-group">
+        <textarea name="address" required></textarea>
+        <label>Address</label>
+      </div>
+
+      <button type="button" class="location-btn">
+        📍 Get My Location
+      </button>
+
+      <button type="submit" class="submit-btn">
+        Book Now
+      </button>
+
+    </form>
+
+  </div>
 </div>
 
-<script>
-  document.getElementById('getLocationBtn').addEventListener('click', () => {
-    const statusDiv = document.getElementById('locationStatus');
-    if (!navigator.geolocation) {
-      statusDiv.innerHTML = '❌ Geolocation not supported by your browser.';
-      return;
-    }
-    statusDiv.innerHTML = '⏳ Fetching your location...';
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        document.getElementById('latitude').value = lat;
-        document.getElementById('longitude').value = lng;
-        statusDiv.innerHTML = `✅ Location captured: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        // Optionally reverse geocode to fill address field
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.display_name) {
-              document.getElementById('address').value = data.display_name;
-            }
-          }).catch(() => {});
-      },
-      (error) => {
-        statusDiv.innerHTML = `❌ Location error: ${error.message}. Please enter address manually.`;
-      },
-      { enableHighAccuracy: true }
-    );
-  });
-</script>
 <%- include('partials/footer') %>

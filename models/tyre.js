@@ -9,5 +9,12 @@ module.exports = (sequelize) => {
     type: { type: DataTypes.STRING },
     stock: { type: DataTypes.INTEGER, defaultValue: 0 },
     image: { type: DataTypes.STRING },
+
+    // ✅ ADD THIS INSIDE OBJECT
+    vehicle: {
+      type: DataTypes.STRING,
+      allowNull: true
+    }
+
   });
 };

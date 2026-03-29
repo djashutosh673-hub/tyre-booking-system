@@ -1,30 +1,24 @@
 <%- include('partials/header') %>
-<div class="container" style="padding: 2rem 0; max-width: 600px;">
-  <h2>Track Your Service</h2>
-  <form action="/booking/track" method="POST">
-    <div class="form-group">
-      <label>Enter Phone Number</label>
-      <input type="text" name="phone" value="<%= phone %>" required>
-    </div>
-    <button type="submit">Track</button>
-  </form>
-  <% if(booking) { %>
-    <div style="margin-top: 2rem; background: white; padding: 1.5rem; border-radius: 12px;">
-      <h3>Booking Details</h3>
-      <p><strong>ID:</strong> <%= booking.id %></p>
-      <p><strong>Name:</strong> <%= booking.name %></p>
-      <p><strong>Vehicle:</strong> <%= booking.vehicle %></p>
-      <p><strong>Repair:</strong> <%= booking.repair %></p>
-      <p><strong>Status:</strong> 
-        <span class="status-badge status-<%= booking.status %>"><%= booking.status %></span>
-      </p>
-      <% if(booking.mechanicId) { %>
-        <p><strong>Assigned Mechanic:</strong> Mechanic #<%= booking.mechanicId %></p>
-      <% } %>
-      <p><strong>Created:</strong> <%= new Date(booking.createdAt).toLocaleString() %></p>
-    </div>
-  <% } else if(phone && !booking) { %>
-    <p style="margin-top:1rem;">No booking found for this phone number.</p>
-  <% } %>
+
+<div class="track-container">
+  <div class="track-box">
+
+    <h2>Track Your Service</h2>
+
+    <form action="/booking/track" method="GET">
+
+      <div class="form-group">
+        <input type="text" name="phone" required>
+        <label>Enter Phone Number</label>
+      </div>
+
+      <button type="submit" class="submit-btn">
+        Track Now
+      </button>
+
+    </form>
+
+  </div>
 </div>
+
 <%- include('partials/footer') %>
