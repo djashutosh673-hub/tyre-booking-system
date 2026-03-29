@@ -3,7 +3,14 @@ const config = require('../config');
 
 const sequelize = new Sequelize(config.databaseUrl, {
   dialect: 'postgres',
+  protocol: 'postgres',
   logging: false,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
 });
 
 const User = require('./User')(sequelize);
