@@ -1,0 +1,45 @@
+<%- include('../partials/header') %>
+<div class="container" style="padding: 2rem 0;">
+  <h2>Mechanic Dashboard</h2>
+  <a href="/mechanic/logout" style="float:right;">Logout</a>
+  <table class="dashboard-table">
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Vehicle</th><th>Repair</th><th>Phone</th><th>Location</th><th>Status</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      <% bookings.forEach(booking => { %>
+      <tr>
+        <td><%= booking.id %></td>
+        <td><%= booking.name %></td>
+        <td><%= booking.vehicle %></td>
+        <td><%= booking.repair %></td>
+        <td><%= booking.phone %></td>
+        <td>
+          <% if(booking.latitude && booking.longitude) { %>
+            <a href="https://maps.google.com/?q=<%= booking.latitude %>,<%= booking.longitude %>" target="_blank">📍 View Map</a>
+          <% } else { %>
+            No location
+          <% } %>
+        </td>
+        <td><span class="status-badge status-<%= booking.status %>"><%= booking.status %></span></td>
+        <td>
+          <% if(booking.status === 'Pending') { %>
+            <form action="/mechanic/assign/<%= booking.id %>" method="POST">
+              <button type="submit">Assign to Me</button>
+            </form>
+          <% } else if(booking.status === 'Assigned' && booking.mechanicId == user.id) { %>
+            <form action="/mechanic/complete/<%= booking.id %>" method="POST">
+              <button type="submit">Mark Completed</button>
+            </form>
+          <% } else if(booking.status === 'Completed') { %>
+            <span>✅ Done</span>
+          <% } else { %>
+            <span>—</span>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../partials/footer') %>

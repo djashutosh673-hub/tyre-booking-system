@@ -1,89 +1,100 @@
-const supabase = require('../config/supabase');
-const config = require('../config');
+const { Tyre, Order, User } = require('../models');
 
-// ============================================
-// Render booking page
-// ============================================
-
-exports.getUserPage = (req, res) => {
-    res.render('user/index', {
-        googleMapsApiKey: config.googleMapsApiKey
-    });
+exports.getHome = (req, res) => {
+  res.render('index', { title: 'TyreHub - Premium Tyres & Service' });
 };
 
-// ============================================
-// Create Booking (FIXED)
-// ============================================
-
-exports.createBooking = async (req, res) => {
-    try {
-        const {
-            userName,
-            userPhone,
-            vehicleNumber,
-            service,
-            lat,
-            lng,
-            bookingDate,
-            bookingTime
-        } = req.body;
-
-        const { data, error } = await supabase
-            .from('bookings')
-            .insert([
-                {
-                    name: userName,
-                    phone: userPhone,
-                    vehicle: vehicleNumber,
-                    service: service,
-                    booking_date: bookingDate,
-                    booking_time: bookingTime,
-                    pickup_lat: parseFloat(lat),
-                    pickup_lng: parseFloat(lng)
-                }
-            ])
-            .select();
-
-        if (error) {
-            console.log("❌ Supabase Error:", error);
-            return res.status(500).json({ error: "Booking failed" });
-        }
-
-        res.status(201).json({
-            success: true,
-            bookingId: data[0].id
-        });
-
-    } catch (err) {
-        console.error("❌ Server Error:", err);
-        res.status(500).json({ error: "Booking failed" });
-    }
+exports.getShop = async (req, res) => {
+  const tyres = await Tyre.findAll();
+  res.render('shop', { title: 'Shop Tyres', tyres });
 };
 
-// ============================================
-// Tracking Page
-// ============================================
+exports.getCart = (req, res) => {
+  const cart = req.session.cart || [];
+  // enrich cart items with tyre details
+  // ... (if needed)
+  const total = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+  res.render('cart', { title: 'Your Cart', cart, total });
+};
 
-exports.getTrackingPage = async (req, res) => {
-    const bookingId = req.params.id;
+exports.addToCart = (req, res) => {
+  const tyreId = req.params.id;
+  if (!req.session.cart) req.session.cart = [];
+  const item = req.session.cart.find(i => i.id == tyreId);
+  if (item) item.quantity++;
+  else req.session.cart.push({ id: tyreId, quantity: 1 });
+  res.redirect('/shop');
+};
 
-    try {
-        const { data, error } = await supabase
-            .from('bookings')
-            .select('*')
-            .eq('id', bookingId)
-            .single();
+exports.updateCart = (req, res) => {
+  const { id, quantity } = req.body;
+  if (!req.session.cart) req.session.cart = [];
+  const item = req.session.cart.find(i => i.id == id);
+  if (item) {
+    if (quantity <= 0) req.session.cart = req.session.cart.filter(i => i.id != id);
+    else item.quantity = parseInt(quantity);
+  }
+  res.redirect('/cart');
+};
 
-        if (error) {
-            console.log(error);
-        }
+exports.removeFromCart = (req, res) => {
+  const id = req.params.id;
+  if (req.session.cart) {
+    req.session.cart = req.session.cart.filter(i => i.id != id);
+  }
+  res.redirect('/cart');
+};
 
-        res.render('user/track', {
-            booking: data || { id: bookingId }
-        });
+exports.getCheckout = async (req, res) => {
+  if (!req.session.user) {
+    req.flash('error', 'Please login to checkout');
+    return res.redirect('/auth/login');
+  }
+  const cart = req.session.cart || [];
+  if (cart.length === 0) return res.redirect('/shop');
 
-    } catch (err) {
-        console.error("Tracking page error:", err);
-        res.status(500).send("Tracking page error");
-    }
+  const tyreIds = cart.map(i => i.id);
+  const tyres = await Tyre.findAll({ where: { id: tyreIds } });
+  const cartItems = cart.map(c => {
+    const tyre = tyres.find(t => t.id == c.id);
+    return { ...tyre.dataValues, quantity: c.quantity };
+  });
+  const total = cartItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+  res.render('checkout', { title: 'Checkout', cartItems, total, paymentMethod: 'Cash on Delivery' });
+};
+
+exports.placeOrder = async (req, res) => {
+  if (!req.session.user) return res.redirect('/auth/login');
+  const cart = req.session.cart || [];
+  if (cart.length === 0) return res.redirect('/shop');
+
+  const tyreIds = cart.map(i => i.id);
+  const tyres = await Tyre.findAll({ where: { id: tyreIds } });
+  const items = cart.map(c => {
+    const tyre = tyres.find(t => t.id == c.id);
+    return {
+      tyreId: tyre.id,
+      name: `${tyre.brand} ${tyre.model} (${tyre.size})`,
+      price: tyre.price,
+      quantity: c.quantity
+    };
+  });
+  const total = items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+
+  await Order.create({
+    UserId: req.session.user.id,
+    items: items,
+    total: total,
+    paymentMethod: 'Cash on Delivery',
+    status: 'Confirmed'
+  });
+
+  for (const item of items) {
+    const tyre = await Tyre.findByPk(item.tyreId);
+    tyre.stock -= item.quantity;
+    await tyre.save();
+  }
+
+  req.session.cart = [];
+  res.render('order-success', { title: 'Order Placed', message: 'Your order has been placed! You will pay cash on delivery.' });
 };

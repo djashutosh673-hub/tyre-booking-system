@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const mechanicController = require('../controllers/mechanicController');
+const { isMechanic } = require('../middleware/auth');
 
-// Page route
-router.get('/mechanic/dashboard', mechanicController.getDashboard);
-
-// API routes
-router.get('/api/mechanic/pending-bookings', mechanicController.getPendingBookings);
-router.post('/api/mechanic/accept-booking', mechanicController.acceptBooking);
-router.get('/api/mechanic/current-job/:mechanicId', mechanicController.getCurrentJob);
-router.get('/api/mechanic/booking-location/:bookingId', mechanicController.getBookingLocation);
+router.get('/login', mechanicController.showLogin);
+router.post('/login', mechanicController.login);
+router.get('/dashboard', isMechanic, mechanicController.dashboard);
+router.post('/update-status', isMechanic, mechanicController.updateBookingStatus);
+router.get('/logout', mechanicController.logout);
+router.post('/assign/:id', isMechanic, mechanicController.assignBooking);
+router.post('/complete/:id', isMechanic, mechanicController.completeBooking);
 
 module.exports = router;

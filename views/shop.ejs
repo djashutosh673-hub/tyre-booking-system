@@ -1,0 +1,19 @@
+<%- include('partials/header') %>
+<section class="container" style="padding: 2rem 0;">
+    <h2>All Tyres</h2>
+    <div class="tyre-grid">
+        <% tyres.forEach(tyre => { %>
+        <div class="tyre-card">
+            <div class="tyre-img"><i class="fas fa-tire" style="font-size: 3rem; color: #1e3c72;"></i></div>
+            <h3><%= tyre.brand %> <%= tyre.model %></h3>
+            <p class="tyre-size"><%= tyre.size %></p>
+            <p class="tyre-type"><%= tyre.type %></p>
+            <div class="tyre-price">₹<%= tyre.price.toLocaleString() %></div>
+            <form action="/cart/add/<%= tyre.id %>" method="POST">
+                <button type="submit" class="btn-small">Add to Cart</button>
+            </form>
+        </div>
+        <% }) %>
+    </div>
+</section>
+<%- include('partials/footer') %>

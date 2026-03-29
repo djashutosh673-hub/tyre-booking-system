@@ -1,0 +1,21 @@
+<%- include('partials/header') %>
+<div class="container" style="max-width: 600px; margin: 3rem auto; text-align: center;">
+  <i class="fas fa-check-circle" style="font-size: 4rem; color: #28a745;"></i>
+  <h2>Booking Confirmed!</h2>
+  <p>Your service request has been received.</p>
+  <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin: 1.5rem 0; text-align: left;">
+    <p><strong>Booking ID:</strong> <%= booking.id %></p>
+    <p><strong>Name:</strong> <%= booking.name %></p>
+    <p><strong>Vehicle:</strong> <%= booking.vehicle %></p>
+    <p><strong>Repair Type:</strong> <%= booking.repair %></p>
+    <p><strong>Phone:</strong> <%= booking.phone %></p>
+    <p><strong>Address:</strong> <%= booking.address || 'Not provided' %></p>
+    <p><strong>Status:</strong> <span class="badge badge-warning"><%= booking.status %></span></p>
+  </div>
+  <p>A mechanic will be assigned shortly. You can track your service using your phone number.</p>
+  <div style="margin-top: 2rem;">
+    <a href="/booking/track" class="btn btn-primary">Track Service</a>
+    <a href="/" class="btn btn-outline">Go Home</a>
+  </div>
+</div>
+<%- include('partials/footer') %>

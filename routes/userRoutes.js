@@ -1,73 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const BookingModel = require('../models/BookingModel');
+const userController = require('../controllers/userController');
 
-// ============================
-// BOOK PAGE
-// ============================
-router.get('/book', (req, res) => {
-    res.render('book');
-});
-
-// ============================
-// CREATE BOOKING (DB)
-// ============================
-router.post('/book', (req, res) => {
-    const { name, vehicle, service } = req.body;
-
-    const data = {
-        name,
-        vehicle,
-        service,
-        lat: 26.9124,
-        lng: 75.7873
-    };
-
-    BookingModel.createBooking(data, (err, result) => {
-        if (err) {
-            console.error(err);
-            return res.send("DB Error");
-        }
-
-        res.redirect(`/track/${result.insertId}`);
-    });
-});
-
-// ============================
-// TRACK PAGE
-// ============================
-router.get('/track/:id', (req, res) => {
-    const id = req.params.id;
-
-    BookingModel.getBookingById(id, (err, booking) => {
-        if (err || !booking) {
-            return res.send("Booking not found");
-        }
-
-        res.render('track', { booking });
-    });
-});
-
-// ============================
-// MECHANIC PANEL
-// ============================
-router.get('/mechanic', (req, res) => {
-
-    BookingModel.getAllBookings((err, bookings) => {
-        if (err) {
-            console.error(err);
-            return res.send("DB Error");
-        }
-
-        res.render('mechanic', { bookings });
-    });
-});
-
-// ============================
-// MECHANIC TRACKING PAGE
-// ============================
-router.get('/mechanic-tracking', (req, res) => {
-    res.render('mechanic-tracking');
-});
+router.get('/', userController.getHome);
+router.get('/shop', userController.getShop);
+router.get('/cart', userController.getCart);
+router.post('/cart/add/:id', userController.addToCart);
+router.post('/cart/update', userController.updateCart);
+router.post('/cart/remove/:id', userController.removeFromCart);
+router.get('/checkout', userController.getCheckout);
+router.post('/place-order', userController.placeOrder);
 
 module.exports = router;

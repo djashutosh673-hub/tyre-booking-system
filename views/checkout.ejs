@@ -1,0 +1,35 @@
+<%- include('partials/header') %>
+<div class="container" style="padding: 2rem 0;">
+    <h2>Checkout</h2>
+    <h3>Order Summary</h3>
+    <table class="cart-table">
+        <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Subtotal</th></tr></thead>
+        <tbody>
+            <% cartItems.forEach(item => { %>
+            <tr>
+                <td><%= item.brand %> <%= item.model %> (<%= item.size %>)</td>
+                <td><%= item.quantity %></td>
+                <td>₹<%= item.price %></td>
+                <td>₹<%= item.price * item.quantity %></td>
+            </tr>
+            <% }) %>
+        </tbody>
+        <tfoot><tr><td colspan="3"><strong>Total</strong></td><td><strong>₹<%= total %></strong></td></tr></tfoot>
+    </table>
+
+    <div style="background: #f9f9f9; padding: 1.5rem; border-radius: 12px; margin: 2rem 0;">
+        <h3>Payment Method</h3>
+        <div style="margin: 1rem 0;">
+            <label style="display: block; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px;">
+                <input type="radio" name="paymentMethod" value="Cash on Delivery" checked disabled> 
+                <strong>Cash on Delivery (COD)</strong> – Pay when you receive the tyres
+            </label>
+        </div>
+        <p class="note">✅ No online payment required. Our delivery agent will collect cash.</p>
+    </div>
+
+    <form action="/place-order" method="POST">
+        <button type="submit" class="btn-primary">Place Order (COD)</button>
+    </form>
+</div>
+<%- include('partials/footer') %>

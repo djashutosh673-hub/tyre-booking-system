@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/" class="logo"><i class="fas fa-tire"></i> TyreHub</a>
+            <ul class="nav-links">
+                <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="/shop"><i class="fas fa-store"></i> Shop</a></li>
+                <li><a href="/booking/book"><i class="fas fa-wrench"></i> Book Service</a></li>
+                <li><a href="/booking/track"><i class="fas fa-map-marker-alt"></i> Track</a></li>
+                <li><a href="/cart"><i class="fas fa-shopping-cart"></i> Cart (<%= cartCount %>)</a></li>
+                <% if (user) { %>
+                    <li><a href="#"><i class="fas fa-user"></i> <%= user.name %></a></li>
+                    <li><a href="/auth/logout">Logout</a></li>
+                    <% if (user.role === 'admin') { %>
+                        <li><a href="/admin/dashboard">Admin</a></li>
+                    <% } else if (user.role === 'mechanic') { %>
+                        <li><a href="/mechanic/dashboard">Dashboard</a></li>
+                    <% } %>
+                <% } else { %>
+                    <li><a href="/auth/login">Login</a></li>
+                    <li><a href="/auth/register">Register</a></li>
+                <% } %>
+            </ul>
+        </div>
+    </nav>
+    <main>
+        <% if (success_msg) { %>
+            <div class="alert alert-success"><%= success_msg %></div>
+        <% } %>
+        <% if (error_msg) { %>
+            <div class="alert alert-error"><%= error_msg %></div>
+        <% } %>

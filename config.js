@@ -1,3 +1,7 @@
+require('dotenv').config();
+
 module.exports = {
-    googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || ''
+  port: process.env.PORT || 3000,
+  sessionSecret: process.env.SESSION_SECRET,
+  databaseUrl: process.env.DATABASE_URL,
 };

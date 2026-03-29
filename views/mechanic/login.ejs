@@ -1,0 +1,19 @@
+<%- include('../partials/header') %>
+<div class="container" style="max-width: 400px; padding: 2rem 0;">
+  <h2>Mechanic Login</h2>
+  <% if (error) { %>
+    <div style="color:red; margin-bottom:1rem;"><%= error %></div>
+  <% } %>
+  <form action="/mechanic/login" method="POST">
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" name="email" required>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" name="password" required>
+    </div>
+    <button type="submit">Login</button>
+  </form>
+</div>
+<%- include('../partials/footer') %>
