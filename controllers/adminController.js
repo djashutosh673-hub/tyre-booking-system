@@ -1,4 +1,4 @@
-const { Booking, User, Tyre } = require('../models');
+const { Booking, User, Tyre, Order } = require('../models');
 
 exports.dashboard = async (req, res) => {
   try {
@@ -10,13 +10,18 @@ exports.dashboard = async (req, res) => {
       limit: 10,
       order: [['createdAt', 'DESC']]
     });
+    const recentOrders = await Order.findAll({
+      limit: 10,
+      order: [['createdAt', 'DESC']]
+    });
     res.render('admin/dashboard', {
       title: 'Admin Dashboard',
       totalBookings,
       totalUsers,
       totalMechanics,
       totalTyres,
-      recentBookings
+      recentBookings,
+      recentOrders
     });
   } catch (err) {
     console.error(err);
@@ -94,6 +99,18 @@ exports.viewBookings = async (req, res) => {
   } catch (err) {
     console.error(err);
     req.flash('error', 'Failed to load bookings');
+    res.redirect('/admin/dashboard');
+  }
+};
+
+// Optional: view all orders
+exports.viewAllOrders = async (req, res) => {
+  try {
+    const orders = await Order.findAll({ order: [['createdAt', 'DESC']] });
+    res.render('admin/orders', { title: 'All Orders', orders });
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to load orders');
     res.redirect('/admin/dashboard');
   }
 };

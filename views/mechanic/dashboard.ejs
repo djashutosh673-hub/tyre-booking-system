@@ -1,132 +1,502 @@
 <%- include('../partials/header') %>
 
 <div class="dashboard-wrapper">
+  <!-- Header with greeting and logout -->
   <div class="dashboard-header">
-    <h2><i class="fas fa-tools"></i> Mechanic Dashboard</h2>
-    <a href="/mechanic/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <div class="greeting">
+      <i class="fas fa-wrench"></i>
+      <h2>Mechanic Dashboard</h2>
+      <span class="badge">Welcome back, <%= user.name %></span>
+    </div>
+    <a href="/mechanic/logout" class="logout-btn">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
   </div>
 
-  <!-- Stats (optional, but you can compute from both collections) -->
+  <!-- Stats cards -->
   <div class="stats-grid">
-    <div class="stat-card">
-      <i class="fas fa-clock"></i>
-      <h3><%= serviceBookings.filter(b => b.status === 'Pending').length + deliveryOrders.filter(o => o.deliveryStatus === 'Pending').length %></h3>
-      <p>Pending Requests</p>
+    <div class="stat-card pending">
+      <div class="stat-icon"><i class="fas fa-clock"></i></div>
+      <div class="stat-content">
+        <h3><%= serviceBookings.filter(b => b.status === 'Pending').length + deliveryOrders.filter(o => o.deliveryStatus === 'Pending').length %></h3>
+        <p>Pending Requests</p>
+      </div>
     </div>
-    <div class="stat-card">
-      <i class="fas fa-user-check"></i>
-      <h3><%= serviceBookings.filter(b => b.status === 'Assigned' && b.mechanicId == user.id).length + deliveryOrders.filter(o => o.deliveryStatus === 'Assigned' && o.assignedMechanicId == user.id).length %></h3>
-      <p>Your Active Jobs</p>
+    <div class="stat-card active">
+      <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+      <div class="stat-content">
+        <h3><%= serviceBookings.filter(b => b.status === 'Assigned' && b.mechanicId == user.id).length + deliveryOrders.filter(o => o.deliveryStatus === 'Assigned' && o.assignedMechanicId == user.id).length %></h3>
+        <p>Your Active Jobs</p>
+      </div>
     </div>
-    <div class="stat-card">
-      <i class="fas fa-check-circle"></i>
-      <h3><%= serviceBookings.filter(b => b.status === 'Completed').length + deliveryOrders.filter(o => o.deliveryStatus === 'Completed').length %></h3>
-      <p>Completed</p>
+    <div class="stat-card completed">
+      <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-content">
+        <h3><%= serviceBookings.filter(b => b.status === 'Completed').length + deliveryOrders.filter(o => o.deliveryStatus === 'Completed').length %></h3>
+        <p>Completed</p>
+      </div>
     </div>
   </div>
 
-  <!-- Service Bookings Table -->
-  <div class="section-title">
-    <i class="fas fa-wrench"></i> Service Requests
-  </div>
-  <% if (serviceBookings.length === 0) { %>
-    <div class="empty-state">No service requests.</div>
-  <% } else { %>
-    <div class="table-responsive">
-      <table class="dashboard-table">
-        <thead>
-          <tr><th>ID</th><th>Name</th><th>Vehicle</th><th>Repair</th><th>Phone</th><th>Location</th><th>Status</th><th>Action</th> </tr>
-        </thead>
-        <tbody>
-          <% serviceBookings.forEach(booking => { %>
+  <!-- Service Requests Section -->
+  <div class="section-card">
+    <div class="section-header">
+      <i class="fas fa-wrench"></i>
+      <h3>Service Requests</h3>
+      <span class="count"><%= serviceBookings.length %></span>
+    </div>
+    <% if (serviceBookings.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No service requests at the moment.</p>
+      </div>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
             <tr>
-              <td data-label="ID"><%= booking.id %></td>
-              <td data-label="Name"><%= booking.name %></td>
+              <th>ID</th>
+              <th>Customer</th>
+              <th>Vehicle</th>
+              <th>Repair</th>
+              <th>Phone</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% serviceBookings.forEach(booking => { %>
+            <tr>
+              <td data-label="ID">#<%= booking.id %></td>
+              <td data-label="Customer"><%= booking.name %></td>
               <td data-label="Vehicle"><%= booking.vehicle %></td>
               <td data-label="Repair"><%= booking.repair %></td>
               <td data-label="Phone"><%= booking.phone %></td>
               <td data-label="Location">
                 <% if(booking.latitude && booking.longitude) { %>
-                  <a href="https://maps.google.com/?q=<%= booking.latitude %>,<%= booking.longitude %>" target="_blank"><i class="fas fa-map-marker-alt"></i> View Map</a>
-                <% } else { %>No location<% } %>
+                  <a href="https://maps.google.com/?q=<%= booking.latitude %>,<%= booking.longitude %>" target="_blank" class="map-link">
+                    <i class="fas fa-map-marker-alt"></i> View Map
+                  </a>
+                <% } else { %>
+                  <span class="no-location">Not provided</span>
+                <% } %>
               </td>
-              <td data-label="Status"><span class="status-badge status-<%= booking.status.toLowerCase() %>"><%= booking.status %></span></td>
+              <td data-label="Status">
+                <span class="status-badge status-<%= booking.status.toLowerCase() %>"><%= booking.status %></span>
+              </td>
               <td data-label="Action">
                 <% if(booking.status === 'Pending') { %>
-                  <form action="/mechanic/assign/<%= booking.id %>" method="POST"><button type="submit" class="action-btn assign-btn">Accept</button></form>
+                  <form action="/mechanic/assign/<%= booking.id %>" method="POST">
+                    <button type="submit" class="action-btn assign">
+                      <i class="fas fa-user-check"></i> Accept
+                    </button>
+                  </form>
                 <% } else if(booking.status === 'Assigned' && booking.mechanicId == user.id) { %>
-                  <form action="/mechanic/complete/<%= booking.id %>" method="POST"><button type="submit" class="action-btn complete-btn">Complete</button></form>
+                  <form action="/mechanic/complete/<%= booking.id %>" method="POST">
+                    <button type="submit" class="action-btn complete">
+                      <i class="fas fa-check-circle"></i> Complete
+                    </button>
+                  </form>
                 <% } else if(booking.status === 'Completed') { %>
-                  <span class="done-badge">Done</span>
+                  <span class="done-badge">✅ Done</span>
                 <% } else { %>
-                  <span class="assigned-else">Assigned to another</span>
+                  <span class="assigned-else">Assigned to other</span>
                 <% } %>
               </td>
             </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  <% } %>
-
-  <!-- Delivery Orders Table -->
-  <div class="section-title">
-    <i class="fas fa-truck"></i> Delivery Orders (Tyre Purchases)
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
   </div>
-  <% if (deliveryOrders.length === 0) { %>
-    <div class="empty-state">No delivery orders.</div>
-  <% } else { %>
-    <div class="table-responsive">
-      <table class="dashboard-table">
-        <thead>
-          <tr><th>Order ID</th><th>Customer</th><th>Phone</th><th>Address</th><th>Items</th><th>Total</th><th>Status</th><th>Action</th> </tr>
-        </thead>
-        <tbody>
-          <% deliveryOrders.forEach(order => { %>
+
+  <!-- Delivery Orders Section -->
+  <div class="section-card">
+    <div class="section-header">
+      <i class="fas fa-truck"></i>
+      <h3>Delivery Orders (Tyre Purchases)</h3>
+      <span class="count"><%= deliveryOrders.length %></span>
+    </div>
+    <% if (deliveryOrders.length === 0) { %>
+      <div class="empty-state">
+        <i class="fas fa-box-open"></i>
+        <p>No delivery orders yet.</p>
+      </div>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
             <tr>
-              <td data-label="Order ID"><%= order.id %></td>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% deliveryOrders.forEach(order => { %>
+            <tr>
+              <td data-label="Order ID">#<%= order.id %></td>
               <td data-label="Customer"><%= order.customerName %></td>
               <td data-label="Phone"><%= order.customerPhone %></td>
-              <td data-label="Address"><%= order.deliveryAddress %></td>
-              <td data-label="Items"><%= order.items.map(i => `${i.name} (x${i.quantity})`).join(', ') %></td>
+              <td data-label="Address" class="address-cell"><%= order.deliveryAddress %></td>
+              <td data-label="Items" class="items-cell">
+                <% order.items.forEach((item, idx) => { %>
+                  <div><%= item.name %> x<%= item.quantity %></div>
+                <% }) %>
+              </td>
               <td data-label="Total">₹<%= order.total %></td>
-              <td data-label="Status"><span class="status-badge status-<%= order.deliveryStatus.toLowerCase() %>"><%= order.deliveryStatus %></span></td>
+              <td data-label="Status">
+                <span class="status-badge status-<%= order.deliveryStatus.toLowerCase() %>"><%= order.deliveryStatus %></span>
+              </td>
               <td data-label="Action">
                 <% if(order.deliveryStatus === 'Pending') { %>
-                  <form action="/mechanic/assign-delivery/<%= order.id %>" method="POST"><button type="submit" class="action-btn assign-btn">Accept</button></form>
+                  <form action="/mechanic/assign-delivery/<%= order.id %>" method="POST">
+                    <button type="submit" class="action-btn assign">
+                      <i class="fas fa-user-check"></i> Accept
+                    </button>
+                  </form>
                 <% } else if(order.deliveryStatus === 'Assigned' && order.assignedMechanicId == user.id) { %>
-                  <form action="/mechanic/complete-delivery/<%= order.id %>" method="POST"><button type="submit" class="action-btn complete-btn">Complete</button></form>
+                  <form action="/mechanic/complete-delivery/<%= order.id %>" method="POST">
+                    <button type="submit" class="action-btn complete">
+                      <i class="fas fa-check-circle"></i> Complete
+                    </button>
+                  </form>
                 <% } else if(order.deliveryStatus === 'Completed') { %>
-                  <span class="done-badge">Delivered</span>
+                  <span class="done-badge">✅ Delivered</span>
                 <% } else { %>
-                  <span class="assigned-else">Assigned to another</span>
+                  <span class="assigned-else">Assigned to other</span>
                 <% } %>
               </td>
             </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-  <% } %>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
 </div>
 
 <%- include('../partials/footer') %>
 
 <style>
-  /* same styles as before, plus section titles */
-  .section-title {
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: #1e3c72;
-    margin: 1.5rem 0 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  :root {
+    --primary: #1e3c72;
+    --primary-dark: #2a5298;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-600: #4b5563;
+    --gray-800: #1f2937;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --radius: 1rem;
   }
+
   .dashboard-wrapper {
     max-width: 1400px;
     margin: 2rem auto;
     padding: 0 1.5rem;
   }
-  /* add other styles from previous version */
+
+  /* Header */
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .greeting {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .greeting i {
+    font-size: 2rem;
+    color: var(--primary);
+  }
+  .greeting h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--gray-800);
+  }
+  .badge {
+    background: var(--gray-100);
+    color: var(--gray-600);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+  }
+  .logout-btn {
+    background: var(--danger);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 40px;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+  }
+  .logout-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+  }
+
+  /* Stats cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-md);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-4px);
+  }
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+  .stat-card.pending .stat-icon { background: #fef3c7; color: var(--warning); }
+  .stat-card.active .stat-icon { background: #dbeafe; color: var(--primary); }
+  .stat-card.completed .stat-icon { background: #d1fae5; color: var(--success); }
+  .stat-content h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--gray-800);
+  }
+  .stat-content p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.85rem;
+  }
+
+  /* Section cards */
+  .section-card {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+    background: var(--gray-50);
+  }
+  .section-header i {
+    font-size: 1.25rem;
+    color: var(--primary);
+  }
+  .section-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--gray-800);
+  }
+  .section-header .count {
+    background: var(--gray-200);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: auto;
+  }
+
+  /* Tables */
+  .table-responsive {
+    overflow-x: auto;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .data-table th {
+    background: var(--gray-50);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-600);
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: top;
+  }
+  .data-table tr:hover {
+    background: var(--gray-50);
+  }
+  .address-cell {
+    max-width: 200px;
+    white-space: normal;
+    word-break: break-word;
+  }
+  .items-cell div {
+    margin: 0.25rem 0;
+    font-size: 0.85rem;
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .status-pending { background: #fef3c7; color: #b45309; }
+  .status-assigned { background: #dbeafe; color: #1e40af; }
+  .status-completed { background: #d1fae5; color: #065f46; }
+
+  /* Action buttons */
+  .action-btn {
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s;
+  }
+  .action-btn.assign {
+    background: var(--primary);
+    color: white;
+  }
+  .action-btn.assign:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+  }
+  .action-btn.complete {
+    background: var(--success);
+    color: white;
+  }
+  .action-btn.complete:hover {
+    background: #059669;
+  }
+  .done-badge {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .assigned-else {
+    font-size: 0.75rem;
+    color: var(--gray-600);
+  }
+  .map-link {
+    color: var(--primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .map-link:hover {
+    text-decoration: underline;
+  }
+  .no-location {
+    color: var(--gray-300);
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 2.5rem;
+    color: var(--gray-600);
+  }
+  .empty-state i {
+    font-size: 2.5rem;
+    color: var(--gray-300);
+    margin-bottom: 0.5rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .dashboard-wrapper {
+      padding: 0 1rem;
+    }
+    .data-table thead {
+      display: none;
+    }
+    .data-table tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .data-table td {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 0.5rem 0;
+      border-bottom: none;
+    }
+    .data-table td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      width: 40%;
+      color: var(--gray-600);
+    }
+    .address-cell, .items-cell {
+      max-width: 100%;
+    }
+    .stats-grid {
+      gap: 1rem;
+    }
+    .stat-card {
+      padding: 1rem;
+    }
+    .stat-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+    }
+    .stat-content h3 {
+      font-size: 1.4rem;
+    }
+  }
 </style>

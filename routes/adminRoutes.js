@@ -11,5 +11,5 @@ router.get('/tyres/edit/:id', adminController.showEditTyre);
 router.post('/tyres/edit/:id', adminController.editTyre);
 router.post('/tyres/delete/:id', adminController.deleteTyre);
 router.get('/bookings', adminController.viewBookings);
-
+router.get('/orders', adminController.viewAllOrders);
 module.exports = router;

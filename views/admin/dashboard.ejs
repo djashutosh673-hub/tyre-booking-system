@@ -3,6 +3,7 @@
 <div class="admin-container">
   <h1>Admin Dashboard</h1>
 
+  <!-- Stats Cards -->
   <div class="stats-grid">
     <div class="stat-card">
       <i class="fas fa-calendar-check"></i>
@@ -26,41 +27,93 @@
     </div>
   </div>
 
+  <!-- Admin Actions -->
   <div class="admin-actions">
     <a href="/admin/tyres/add" class="btn btn-primary">Add New Tyre</a>
     <a href="/admin/tyres" class="btn btn-secondary">Manage Tyres</a>
     <a href="/admin/bookings" class="btn btn-secondary">View All Bookings</a>
+    <a href="/admin/orders" class="btn btn-secondary">View All Orders</a>
   </div>
 
-  <div class="recent-bookings">
-    <h2>Recent Bookings</h2>
+  <!-- Recent Service Bookings -->
+  <div class="recent-section">
+    <h2><i class="fas fa-wrench"></i> Recent Service Bookings</h2>
     <% if (recentBookings && recentBookings.length > 0) { %>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Vehicle</th>
-            <th>Repair</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% recentBookings.forEach(booking => { %>
-          <tr>
-            <td><%= booking.id %></td>
-            <td><%= booking.name %></td>
-            <td><%= booking.vehicle %></td>
-            <td><%= booking.repair %></td>
-            <td><span class="status-badge status-<%= booking.status %>"><%= booking.status %></span></td>
-            <td><%= booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'N/A' %></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Vehicle</th>
+              <th>Repair</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% recentBookings.forEach(booking => { %>
+             <tr>
+              <td data-label="ID"><%= booking.id %></td>
+              <td data-label="Name"><%= booking.name %></td>
+              <td data-label="Vehicle"><%= booking.vehicle %></td>
+              <td data-label="Repair"><%= booking.repair %></td>
+              <td data-label="Status"><span class="status-badge status-<%= booking.status.toLowerCase() %>"><%= booking.status %></span></td>
+              <td data-label="Date"><%= new Date(booking.createdAt).toLocaleDateString() %></td>
+             </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
     <% } else { %>
       <p>No recent bookings.</p>
+    <% } %>
+  </div>
+
+  <!-- Recent Shop Orders (Tyre Purchases) -->
+  <div class="recent-section">
+    <h2><i class="fas fa-shopping-cart"></i> Recent Shop Orders</h2>
+    <% if (recentOrders && recentOrders.length > 0) { %>
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+             <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Items</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Date</th>
+             </tr>
+          </thead>
+          <tbody>
+            <% recentOrders.forEach(order => { %>
+             <tr>
+              <td data-label="Order ID"><%= order.id %></td>
+              <td data-label="Customer"><%= order.customerName || 'N/A' %></td>
+              <td data-label="Phone"><%= order.customerPhone || 'N/A' %></td>
+              <td data-label="Items">
+                <% if (order.items && order.items.length) { %>
+                  <%= order.items.map(i => `${i.name} (x${i.quantity})`).join(', ') %>
+                <% } else { %>
+                  -
+                <% } %>
+              </td>
+              <td data-label="Total">₹<%= order.total %></td>
+              <td data-label="Status">
+                <span class="status-badge status-<%= (order.deliveryStatus || 'pending').toLowerCase() %>">
+                  <%= order.deliveryStatus || 'Pending' %>
+                </span>
+              </td>
+              <td data-label="Date"><%= new Date(order.createdAt).toLocaleDateString() %></td>
+             </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <p>No recent shop orders.</p>
     <% } %>
   </div>
 </div>
@@ -98,11 +151,13 @@
     display: flex;
     gap: 1rem;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
   }
   .admin-actions .btn {
     padding: 0.5rem 1rem;
     border-radius: 8px;
     text-decoration: none;
+    font-weight: 500;
   }
   .btn-primary {
     background: #2a5298;
@@ -112,18 +167,27 @@
     background: #e2e8f0;
     color: #1e293b;
   }
-  .recent-bookings {
+  .recent-section {
     background: white;
     border-radius: 16px;
     padding: 1.5rem;
+    margin-bottom: 2rem;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   }
-  .recent-bookings h2 {
+  .recent-section h2 {
     margin-top: 0;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .table-responsive {
+    overflow-x: auto;
   }
   .admin-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 0.9rem;
   }
   .admin-table th,
   .admin-table td {
@@ -133,6 +197,7 @@
   }
   .admin-table th {
     background: #f8fafc;
+    font-weight: 600;
   }
   .status-badge {
     display: inline-block;
@@ -141,16 +206,41 @@
     font-size: 0.75rem;
     font-weight: 500;
   }
-  .status-Pending {
+  .status-pending {
     background: #fef3c7;
     color: #b45309;
   }
-  .status-Assigned {
+  .status-assigned {
     background: #dbeafe;
     color: #1e40af;
   }
-  .status-Completed {
+  .status-completed {
     background: #d1fae5;
     color: #065f46;
+  }
+  @media (max-width: 768px) {
+    .admin-table thead {
+      display: none;
+    }
+    .admin-table tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 1rem;
+    }
+    .admin-table td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: none;
+    }
+    .admin-table td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      width: 40%;
+      color: #1e293b;
+    }
   }
 </style>
