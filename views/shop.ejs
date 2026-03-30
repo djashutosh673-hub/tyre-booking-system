@@ -1,58 +1,99 @@
 <%- include('partials/header') %>
 
-<div class="shop-wrapper">
-
-  <h1 class="shop-title">Explore Tyres</h1>
-
-  <% if (vehicle) { %>
-    <h2 class="selected-vehicle">
-      Showing tyres for <%= vehicle %>
-    </h2>
-  <% } %>
-
-  <!-- SEARCH -->
-  <div class="search-container">
-    <input type="text" id="vehicleSearch" placeholder="Search vehicle...">
-    <div id="suggestions"></div>
+<div class="hero-section">
+  <div class="explore-header">
+    <h1>Explore Tyres</h1>
+    <div class="search-vehicle">
+      <span>🔍</span>
+      <input type="text" id="vehicleSearch" placeholder="Search vehicle...">
+    </div>
   </div>
 
-  <!-- GRID -->
-  <div class="tyre-grid">
-    <% tyres.forEach(tyre => { %>
-      <div class="tyre-card">
+  <div id="productsGrid" class="products-grid">
+    <% if (tyreGroups && tyreGroups.length > 0) { %>
+      <% tyreGroups.forEach(group => { %>
+        <div class="product-card">
+          <div class="badge">🏆 Best Seller</div>
+          <div class="product-title"><%= group.brand %> <%= group.model %></div>
+          <div class="tyre-spec">🌍 All Season</div>
 
-        <div class="badge">Best Seller</div>
-
-        <div class="tyre-image-box">
-          <img src="/images/tyre.png" alt="tyre">
-        </div>
-
-        <div class="tyre-info">
-          <h3><%= tyre.name || "Premium Tyre" %></h3>
-
-          <p class="size"><%= tyre.size %></p>
-          <p class="category"><%= tyre.category || "All Season" %></p>
+          <div class="size-selector">
+            <label>📐 CHOOSE TYRE SIZE</label>
+            <select class="tyre-size-dropdown" data-product-key="<%= group.brand.replace(/\s/g,'') %><%= group.model.replace(/\s/g,'') %>">
+              <% group.sizes.forEach(size => { %>
+                <option value="<%= size.id %>" data-price="<%= size.price %>"><%= size.size %> – ₹<%= size.price %></option>
+              <% }) %>
+            </select>
+          </div>
 
           <div class="rating">
-            ⭐⭐⭐⭐☆ <span>(120)</span>
+            <span class="stars">★★★★★</span>
+            <span class="review-count">(120 reviews)</span>
           </div>
 
-          <div class="bottom-section">
-            <div>
-              <span class="price">₹<%= tyre.price %></span>
-              <span class="old-price">₹<%= tyre.price + 1500 %></span>
-            </div>
-
-            <button>Add</button>
+          <div class="price" id="price-<%= group.brand.replace(/\s/g,'') %><%= group.model.replace(/\s/g,'') %>">
+            ₹<%= group.sizes[0].price %> <span>/ per tyre</span>
           </div>
+
+          <form action="/cart/add/<%= group.sizes[0].id %>" method="POST" class="add-to-cart-form">
+            <input type="hidden" name="tyreId" class="selected-tyre-id" value="<%= group.sizes[0].id %>">
+            <button type="submit" class="add-btn">➕ Add to Cart</button>
+          </form>
         </div>
-
-      </div>
-    <% }) %>
+      <% }) %>
+    <% } else { %>
+      <p>No tyres available at the moment.</p>
+    <% } %>
   </div>
-
 </div>
 
-<script src="/js/shop.js"></script>
+<script>
+  document.querySelectorAll('.tyre-size-dropdown').forEach(select => {
+    select.addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      const tyreId = selectedOption.value;
+      const price = selectedOption.getAttribute('data-price');
+      const card = this.closest('.product-card');
+      const priceDiv = card.querySelector('.price');
+      const hiddenInput = card.querySelector('.selected-tyre-id');
+      const form = card.querySelector('.add-to-cart-form');
+      priceDiv.innerHTML = '₹' + price + ' <span>/ per tyre</span>';
+      hiddenInput.value = tyreId;
+      form.action = '/cart/add/' + tyreId;
+    });
+  });
+</script>
 
 <%- include('partials/footer') %>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+  body { background: #f4f6fa; color: #1a2c3e; }
+  .hero-section { padding: 2rem 2rem 1rem 2rem; max-width: 1400px; margin: 0 auto; }
+  .explore-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .explore-header h1 { font-size: 2rem; font-weight: 700; background: linear-gradient(145deg, #1f3b4c, #2a4b60); background-clip: text; -webkit-background-clip: text; color: transparent; }
+  .search-vehicle { background: white; padding: 0.5rem 1.2rem; border-radius: 60px; border: 1px solid #cfdde6; display: flex; align-items: center; gap: 8px; }
+  .search-vehicle input { border: none; outline: none; font-size: 0.9rem; width: 180px; background: transparent; }
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 2rem; margin-top: 1.5rem; margin-bottom: 3rem; }
+  .product-card { background: white; border-radius: 28px; box-shadow: 0 12px 28px rgba(0,0,0,0.05); transition: transform 0.2s, box-shadow 0.2s; padding: 1.2rem 1.2rem 1.5rem; border: 1px solid #eef2f6; display: flex; flex-direction: column; }
+  .product-card:hover { transform: translateY(-5px); box-shadow: 0 20px 30px -12px rgba(0,0,0,0.12); }
+  .badge { background: #f5b04220; color: #b45f1b; font-size: 0.7rem; font-weight: 700; padding: 0.25rem 0.8rem; border-radius: 40px; display: inline-block; width: fit-content; margin-bottom: 0.8rem; }
+  .product-title { font-size: 1.35rem; font-weight: 700; margin: 0.25rem 0 0.2rem; display: flex; justify-content: space-between; }
+  .tyre-spec { font-size: 0.8rem; color: #4b6a7c; margin-bottom: 1rem; background: #f0f4f9; display: inline-block; padding: 0.2rem 0.7rem; border-radius: 20px; }
+  .size-selector { margin: 0.8rem 0 0.6rem; }
+  .size-selector label { font-size: 0.75rem; font-weight: 600; color: #2c3e4e; text-transform: uppercase; display: block; margin-bottom: 0.4rem; }
+  .tyre-size-dropdown { width: 100%; padding: 0.7rem 0.9rem; border-radius: 40px; border: 1.5px solid #e2e8f0; background: white; font-size: 0.85rem; font-weight: 500; cursor: pointer; outline: none; }
+  .tyre-size-dropdown:focus { border-color: #c12727; box-shadow: 0 0 0 2px rgba(193,39,39,0.2); }
+  .rating { display: flex; align-items: center; gap: 6px; margin: 0.7rem 0; }
+  .stars { color: #f4b942; letter-spacing: 2px; font-size: 0.85rem; }
+  .review-count { font-size: 0.7rem; color: #5d7384; }
+  .price { font-size: 1.7rem; font-weight: 800; color: #1f2f3a; margin: 0.6rem 0 0.8rem; }
+  .price span { font-size: 0.9rem; font-weight: 500; color: #5f7f94; }
+  .add-btn { background: #1f2f3a; color: white; border: none; padding: 0.8rem 0; border-radius: 40px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 0.3rem; width: 100%; }
+  .add-btn:hover { background: #c12727; transform: scale(0.98); }
+  @media (max-width: 700px) {
+    .hero-section { padding: 1rem; }
+    .products-grid { gap: 1rem; }
+    .explore-header { flex-direction: column; gap: 12px; align-items: stretch; }
+  }
+</style>
