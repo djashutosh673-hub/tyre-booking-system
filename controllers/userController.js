@@ -15,17 +15,11 @@ exports.getHome = (req, res) => {
 exports.getShop = async (req, res) => {
   try {
     const allTyres = await Tyre.findAll();
-    // Group by brand + model
     const groups = allTyres.reduce((acc, tyre) => {
       const key = `${tyre.brand}|${tyre.model}`;
       if (!acc[key]) {
-        acc[key] = {
-          brand: tyre.brand,
-          model: tyre.model,
-          sizes: []
-        };
+        acc[key] = { brand: tyre.brand, model: tyre.model, sizes: [] };
       }
-      // Avoid duplicate sizes (if same size appears twice in DB)
       const existing = acc[key].sizes.find(s => s.size === tyre.size);
       if (!existing) {
         acc[key].sizes.push({
@@ -73,6 +67,7 @@ exports.addToCart = async (req, res) => {
     req.session.cart.push({
       id: tyre.id,
       name: `${tyre.brand} ${tyre.model}`,
+      size: tyre.size,
       price: tyre.price,
       quantity: 1
     });
@@ -102,6 +97,7 @@ exports.removeFromCart = (req, res) => {
   res.redirect('/cart');
 };
 
+/* ================= CHECKOUT ================= */
 exports.getCheckout = async (req, res) => {
   if (!req.session.user) {
     req.flash('error', 'Please login to checkout');
@@ -116,13 +112,37 @@ exports.getCheckout = async (req, res) => {
     return { ...tyre.dataValues, quantity: c.quantity };
   });
   const total = cartItems.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-  res.render('checkout', { title: 'Checkout', cartItems, total, paymentMethod: 'Cash on Delivery' });
+  res.render('checkout', {
+    title: 'Checkout',
+    cartItems,
+    total,
+    paymentMethod: 'Cash on Delivery',
+    user: req.session.user
+  });
 };
 
+/* ================= PLACE ORDER ================= */
 exports.placeOrder = async (req, res) => {
   if (!req.session.user) return res.redirect('/auth/login');
+
   const cart = req.session.cart || [];
   if (cart.length === 0) return res.redirect('/shop');
+
+  const {
+    customerName,
+    customerPhone,
+    customerEmail,
+    deliveryAddress,
+    latitude,
+    longitude,
+    paymentMethod
+  } = req.body;
+
+  if (!customerName || !customerPhone || !customerEmail || !deliveryAddress) {
+    req.flash('error', 'Please fill all delivery details.');
+    return res.redirect('/checkout');
+  }
+
   const tyreIds = cart.map(i => i.id);
   const tyres = await Tyre.findAll({ where: { id: tyreIds } });
   const items = cart.map(c => {
@@ -135,18 +155,70 @@ exports.placeOrder = async (req, res) => {
     };
   });
   const total = items.reduce((sum, i) => sum + (i.price * i.quantity), 0);
-  await Order.create({
-    UserId: req.session.user.id,
-    items: items,
-    total: total,
-    paymentMethod: 'Cash on Delivery',
-    status: 'Confirmed'
+
+  // CREATE ORDER AND CAPTURE THE RETURNED OBJECT
+  const newOrder = await Order.create({
+    userId: req.session.user.id,
+    items,
+    total,
+    paymentMethod: paymentMethod || 'Cash on Delivery',
+    status: 'Confirmed',
+    customerName,
+    customerPhone,
+    customerEmail,
+    deliveryAddress,
+    latitude: latitude || null,
+    longitude: longitude || null,
   });
+
+  // Reduce stock
   for (const item of items) {
     const tyre = await Tyre.findByPk(item.tyreId);
     tyre.stock -= item.quantity;
     await tyre.save();
   }
+
+  // Update user profile if changed
+  const user = await User.findByPk(req.session.user.id);
+  if (deliveryAddress !== user.address || customerPhone !== user.phone) {
+    user.address = deliveryAddress;
+    user.phone = customerPhone;
+    await user.save();
+  }
+
   req.session.cart = [];
-  res.render('order-success', { title: 'Order Placed', message: 'Your order has been placed! You will pay cash on delivery.' });
+
+  // PASS orderId TO THE SUCCESS PAGE
+  res.render('order-success', {
+    title: 'Order Placed',
+    message: 'Your order has been placed! You will pay cash on delivery.',
+    orderId: newOrder.id
+  });
+};
+
+/* ================= ORDER TRACKING ================= */
+exports.trackOrderForm = (req, res) => {
+  res.render('track-order', { title: 'Track Your Order', order: null, identifier: '' });
+};
+
+exports.trackOrder = async (req, res) => {
+  const { identifier } = req.body;
+  if (!identifier) {
+    req.flash('error', 'Please enter order ID or phone number');
+    return res.redirect('/track-order');
+  }
+
+  try {
+    let order;
+    if (!isNaN(identifier) && identifier.toString().length < 10) {
+      order = await Order.findByPk(parseInt(identifier));
+    } else {
+      order = await Order.findOne({ where: { customerPhone: identifier } });
+    }
+    res.render('track-order', { title: 'Track Your Order', order, identifier });
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Error finding order');
+    res.redirect('/track-order');
+  }
 };

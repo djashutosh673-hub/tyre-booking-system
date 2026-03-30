@@ -5,9 +5,12 @@ exports.isAdmin = (req, res, next) => {
 };
 
 exports.isMechanic = (req, res, next) => {
-  if (req.session.user && req.session.user.role === 'mechanic') return next();
-  req.flash('error', 'Mechanic access required');
-  res.redirect('/mechanic/login');
+  if (req.session.user && req.session.user.role === 'mechanic') {
+    return next();
+  }
+  req.flash('error', 'Access denied. Mechanic only.');
+  res.redirect('/');
+
 };
 
 exports.isAuthenticated = (req, res, next) => {

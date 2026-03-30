@@ -1,45 +1,139 @@
 <%- include('partials/header') %>
 
 <div class="cart-container">
+  <div class="cart-box">
+    <h2>Your Cart</h2>
 
-  <% if (!cart || cart.length === 0) { %>
+    <% if (!cart || cart.length === 0) { %>
+      <div class="empty-cart">
+        <div class="empty-icon">🛒</div>
+        <h2>Your Cart is Empty</h2>
+        <p>Start adding tyres to your cart and enjoy smooth rides 🚗</p>
+        <a href="/shop" class="shop-btn">Browse Tyres</a>
+      </div>
+    <% } else { %>
+      <table class="cart-table">
+        <thead>
+          <tr><th>Product</th><th>Size</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% cart.forEach(item => { %>
+            <tr>
+              <td><%= item.name %></td>
+              <td><%= item.size || '-' %></td>
+              <td>₹<%= item.price %></td>
+              <td>
+                <form action="/cart/update" method="POST" style="display:inline;">
+                  <input type="hidden" name="id" value="<%= item.id %>">
+                  <input type="number" name="quantity" value="<%= item.quantity %>" min="1" style="width:60px;">
+                  <button type="submit" class="update-btn">Update</button>
+                </form>
+              </td>
+              <td>₹<%= item.price * item.quantity %></td>
+              <td>
+                <form action="/cart/remove/<%= item.id %>" method="POST">
+                  <button type="submit" class="remove-btn">Remove</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+        <tfoot>
+          <tr><td colspan="4"><strong>Total</strong></td><td><strong>₹<%= total %></strong></td><td></td></tr>
+        </tfoot>
+      </table>
 
-   <div class="empty-cart">
-  
-  <div class="empty-icon">🛒</div>
-
-  <h2>Your Cart is Empty</h2>
-  <p>Start adding tyres to your cart and enjoy smooth rides 🚗</p>
-
-  <a href="/shop" class="shop-btn">Browse Tyres</a>
-
-</div>
-
-  <% } else { %>
-
-    <div class="cart-box">
-      <h2>Your Cart</h2>
-
-      <% cart.forEach(item => { %>
-        <div class="cart-item">
-          <img src="/images/tyre.png">
-
-          <div class="cart-info">
-            <h3><%= item.name %></h3>
-            <p>₹<%= item.price %></p>
-          </div>
-
-          <div class="cart-actions">
-            <span>Qty: <%= item.quantity %></span>
-          </div>
-        </div>
-      <% }) %>
-
-      <button class="checkout-btn">Proceed to Checkout</button>
-    </div>
-
-  <% } %>
-
+      <div class="cart-actions">
+        <a href="/shop" class="continue-btn">← Continue Shopping</a>
+        <a href="/checkout" class="checkout-btn">Proceed to Checkout →</a>
+      </div>
+    <% } %>
+  </div>
 </div>
 
 <%- include('partials/footer') %>
+
+<style>
+  .cart-container {
+    min-height: 80vh;
+    background: #f8fafc;
+    padding: 2rem;
+  }
+  .cart-box {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 24px;
+    padding: 2rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+  .cart-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .cart-table th, .cart-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .cart-table th {
+    background: #f1f5f9;
+  }
+  .cart-table input[type="number"] {
+    padding: 0.25rem;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    text-align: center;
+  }
+  .update-btn, .remove-btn {
+    background: #e2e8f0;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.8rem;
+  }
+  .update-btn:hover, .remove-btn:hover {
+    background: #cbd5e1;
+  }
+  .cart-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+  }
+  .continue-btn, .checkout-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 40px;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .continue-btn {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+  .checkout-btn {
+    background: #1e3c72;
+    color: white;
+  }
+  .checkout-btn:hover {
+    background: #2a5298;
+  }
+  .empty-cart {
+    text-align: center;
+    padding: 3rem;
+  }
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  .shop-btn {
+    display: inline-block;
+    background: #1e3c72;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 40px;
+    text-decoration: none;
+    margin-top: 1rem;
+  }
+</style>

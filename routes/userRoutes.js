@@ -18,5 +18,7 @@ router.post('/cart/remove/:id', userController.removeFromCart);
 /* ===== CHECKOUT ===== */
 router.get('/checkout', userController.getCheckout);
 router.post('/place-order', userController.placeOrder);
+router.get('/track-order', userController.trackOrderForm);
+router.post('/track-order', userController.trackOrder);
 
 module.exports = router;
