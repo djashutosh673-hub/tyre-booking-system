@@ -5,7 +5,7 @@
 
     <h2>Book Tyre Service</h2>
 
-    <form action="/booking/book" method="POST">
+    <form id="bookingForm" action="/booking/book" method="POST">
 
       <div class="form-group">
         <input type="text" name="name" required>
@@ -13,12 +13,12 @@
       </div>
 
       <div class="form-group">
-        <input type="text" name="vehicleModel" required>
+        <input type="text" name="vehicle" required>
         <label>Vehicle Model</label>
       </div>
 
       <div class="form-group">
-        <select name="repairType" required>
+        <select name="repair" required>
           <option value="" disabled selected></option>
           <option>Puncture Repair</option>
           <option>Tyre Replacement</option>
@@ -28,16 +28,20 @@
       </div>
 
       <div class="form-group">
-        <input type="text" name="phone" required>
+        <input type="tel" name="phone" required>
         <label>Phone</label>
       </div>
 
       <div class="form-group">
-        <textarea name="address" required></textarea>
+        <textarea name="address" id="address" required></textarea>
         <label>Address</label>
       </div>
 
-      <button type="button" class="location-btn">
+      <!-- Hidden fields for coordinates (optional) -->
+      <input type="hidden" name="latitude" id="latitude">
+      <input type="hidden" name="longitude" id="longitude">
+
+      <button type="button" class="location-btn" id="getLocationBtn">
         📍 Get My Location
       </button>
 
@@ -51,3 +55,113 @@
 </div>
 
 <%- include('partials/footer') %>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const locationBtn = document.getElementById('getLocationBtn');
+    const addressField = document.getElementById('address');
+    const latitudeField = document.getElementById('latitude');
+    const longitudeField = document.getElementById('longitude');
+    const bookingForm = document.getElementById('bookingForm');
+
+    // Function to set address and coordinates
+    function setLocation(address, lat, lng) {
+      addressField.value = address;
+      latitudeField.value = lat || '';
+      longitudeField.value = lng || '';
+    }
+
+    // Get location button click handler
+    if (locationBtn) {
+      locationBtn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+          alert('Geolocation is not supported by your browser.');
+          return;
+        }
+
+        // Show loading state
+        const originalText = locationBtn.textContent;
+        locationBtn.textContent = '📍 Getting location...';
+        locationBtn.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+          async function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            try {
+              // Use OpenStreetMap Nominatim for reverse geocoding
+              const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+              const data = await response.json();
+              if (data && data.display_name) {
+                setLocation(data.display_name, lat, lng);
+              } else {
+                setLocation(`Lat: ${lat}, Lng: ${lng}`, lat, lng);
+              }
+            } catch (err) {
+              setLocation(`Lat: ${lat}, Lng: ${lng}`, lat, lng);
+            } finally {
+              locationBtn.textContent = originalText;
+              locationBtn.disabled = false;
+            }
+          },
+          function(error) {
+            let errorMsg = '';
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                errorMsg = 'Location permission denied. Please enable location access.';
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMsg = 'Location information unavailable.';
+                break;
+              case error.TIMEOUT:
+                errorMsg = 'Location request timed out.';
+                break;
+              default:
+                errorMsg = 'An unknown error occurred.';
+            }
+            alert(errorMsg);
+            locationBtn.textContent = originalText;
+            locationBtn.disabled = false;
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      });
+    }
+
+    // Form submission validation: ensure address is not empty
+    bookingForm.addEventListener('submit', function(e) {
+      if (!addressField.value.trim()) {
+        alert('Please provide your address. Use the location button or type your address.');
+        e.preventDefault();
+        return false;
+      }
+      // Optionally, you could also check that coordinates are filled, but address is enough.
+      return true;
+    });
+  });
+</script>
+
+<style>
+  /* Optional: Ensure textarea and input have consistent height */
+  .form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  /* Ensure the location button doesn't get overridden by global button styles */
+  .location-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    margin-bottom: 15px;
+    width: 100%;
+  }
+  .location-btn:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  /* Make the submit button consistent */
+  .submit-btn {
+    width: 100%;
+  }
+</style>

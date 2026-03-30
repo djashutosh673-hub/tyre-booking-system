@@ -1,45 +1,310 @@
 <%- include('../partials/header') %>
-<div class="container" style="padding: 2rem 0;">
-  <h2>Mechanic Dashboard</h2>
-  <a href="/mechanic/logout" style="float:right;">Logout</a>
-  <table class="dashboard-table">
-    <thead>
-      <tr><th>ID</th><th>Name</th><th>Vehicle</th><th>Repair</th><th>Phone</th><th>Location</th><th>Status</th><th>Action</th></tr>
-    </thead>
-    <tbody>
-      <% bookings.forEach(booking => { %>
-      <tr>
-        <td><%= booking.id %></td>
-        <td><%= booking.name %></td>
-        <td><%= booking.vehicle %></td>
-        <td><%= booking.repair %></td>
-        <td><%= booking.phone %></td>
-        <td>
-          <% if(booking.latitude && booking.longitude) { %>
-            <a href="https://maps.google.com/?q=<%= booking.latitude %>,<%= booking.longitude %>" target="_blank">📍 View Map</a>
-          <% } else { %>
-            No location
-          <% } %>
-        </td>
-        <td><span class="status-badge status-<%= booking.status %>"><%= booking.status %></span></td>
-        <td>
-          <% if(booking.status === 'Pending') { %>
-            <form action="/mechanic/assign/<%= booking.id %>" method="POST">
-              <button type="submit">Assign to Me</button>
-            </form>
-          <% } else if(booking.status === 'Assigned' && booking.mechanicId == user.id) { %>
-            <form action="/mechanic/complete/<%= booking.id %>" method="POST">
-              <button type="submit">Mark Completed</button>
-            </form>
-          <% } else if(booking.status === 'Completed') { %>
-            <span>✅ Done</span>
-          <% } else { %>
-            <span>—</span>
-          <% } %>
-        </td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
+
+<style>
+  /* Dashboard specific enhancements */
+  .dashboard-wrapper {
+    padding: 2rem 1rem;
+    background: #f8fafc;
+    min-height: calc(100vh - 200px);
+  }
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+    gap: 1rem;
+  }
+  .dashboard-header h2 {
+    font-size: 1.8rem;
+    color: #1e3c72;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .logout-btn {
+    background: #ef4444;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .logout-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+  }
+  /* Stats cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: white;
+    padding: 1.2rem;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    text-align: center;
+    transition: transform 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-3px);
+  }
+  .stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2a5298;
+  }
+  .stat-label {
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+  /* Table styles */
+  .dashboard-table {
+    width: 100%;
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    border-collapse: collapse;
+  }
+  .dashboard-table th {
+    background: #1e3c72;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+  }
+  .dashboard-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  .dashboard-table tr:hover {
+    background: #f1f5f9;
+  }
+  /* Status badges */
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .status-Pending {
+    background: #fef3c7;
+    color: #b45309;
+  }
+  .status-Assigned {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .status-Completed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  /* Action buttons */
+  .action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .assign-btn {
+    background: #2a5298;
+    color: white;
+  }
+  .assign-btn:hover {
+    background: #1e3c72;
+    transform: translateY(-2px);
+  }
+  .complete-btn {
+    background: #10b981;
+    color: white;
+  }
+  .complete-btn:hover {
+    background: #059669;
+  }
+  .done-badge {
+    background: #d1fae5;
+    color: #065f46;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .view-map {
+    color: #2a5298;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .view-map:hover {
+    text-decoration: underline;
+  }
+  /* Responsive table */
+  @media (max-width: 768px) {
+    .dashboard-table thead {
+      display: none;
+    }
+    .dashboard-table tbody tr {
+      display: block;
+      margin-bottom: 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 1rem;
+      background: white;
+    }
+    .dashboard-table td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px dashed #e2e8f0;
+      gap: 1rem;
+    }
+    .dashboard-table td:before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: #1e3c72;
+      width: 40%;
+    }
+    .dashboard-table td:last-child {
+      border-bottom: none;
+    }
+  }
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    background: white;
+    border-radius: 20px;
+  }
+  .empty-state i {
+    font-size: 3rem;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+  }
+</style>
+
+<div class="dashboard-wrapper">
+  <div class="dashboard-header">
+    <h2>
+      <i class="fas fa-tools"></i> 
+      Mechanic Dashboard
+    </h2>
+    <a href="/mechanic/logout" class="logout-btn">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+  </div>
+
+  <% 
+    // Calculate stats
+    const pendingCount = bookings.filter(b => b.status === 'Pending').length;
+    const assignedCount = bookings.filter(b => b.status === 'Assigned' && b.mechanicId == user.id).length;
+    const completedCount = bookings.filter(b => b.status === 'Completed').length;
+  %>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-number"><%= pendingCount %></div>
+      <div class="stat-label">Pending Requests</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number"><%= assignedCount %></div>
+      <div class="stat-label">Your Active Jobs</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number"><%= completedCount %></div>
+      <div class="stat-label">Completed</div>
+    </div>
+  </div>
+
+  <% if (bookings.length === 0) { %>
+    <div class="empty-state">
+      <i class="fas fa-clipboard-list"></i>
+      <p>No bookings assigned yet. Check back later!</p>
+    </div>
+  <% } else { %>
+    <div style="overflow-x: auto;">
+      <table class="dashboard-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Vehicle</th>
+            <th>Repair</th>
+            <th>Phone</th>
+            <th>Location</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% bookings.forEach(booking => { %>
+          <tr>
+            <td data-label="ID"><%= booking.id %></td>
+            <td data-label="Name"><%= booking.name %></td>
+            <td data-label="Vehicle"><%= booking.vehicle %></td>
+            <td data-label="Repair"><%= booking.repair %></td>
+            <td data-label="Phone"><%= booking.phone %></td>
+            <td data-label="Location">
+              <% if(booking.latitude && booking.longitude) { %>
+                <a href="https://maps.google.com/?q=<%= booking.latitude %>,<%= booking.longitude %>" target="_blank" class="view-map">
+                  <i class="fas fa-map-marker-alt"></i> View Map
+                </a>
+              <% } else { %>
+                <span style="color:#94a3b8;">No location</span>
+              <% } %>
+            </td>
+            <td data-label="Status">
+              <span class="status-badge status-<%= booking.status %>">
+                <%= booking.status %>
+              </span>
+            </td>
+            <td data-label="Action">
+              <% if(booking.status === 'Pending') { %>
+                <form action="/mechanic/assign/<%= booking.id %>" method="POST" style="margin:0;">
+                  <button type="submit" class="action-btn assign-btn">
+                    <i class="fas fa-user-check"></i> Assign to Me
+                  </button>
+                </form>
+              <% } else if(booking.status === 'Assigned' && booking.mechanicId == user.id) { %>
+                <form action="/mechanic/complete/<%= booking.id %>" method="POST" style="margin:0;">
+                  <button type="submit" class="action-btn complete-btn">
+                    <i class="fas fa-check-circle"></i> Mark Completed
+                  </button>
+                </form>
+              <% } else if(booking.status === 'Completed') { %>
+                <span class="done-badge">
+                  <i class="fas fa-check"></i> Done
+                </span>
+              <% } else { %>
+                <span style="color:#94a3b8;">—</span>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
 </div>
+
 <%- include('../partials/footer') %>

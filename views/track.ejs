@@ -1,24 +1,395 @@
 <%- include('partials/header') %>
 
-<div class="track-container">
-  <div class="track-box">
+<div class="track-page">
+  <div class="track-card">
+    <div class="track-header">
+      <i class="fas fa-map-marked-alt"></i>
+      <h2>Track Your Service</h2>
+      <p>Enter the phone number used when booking</p>
+    </div>
 
-    <h2>Track Your Service</h2>
-
-    <form action="/booking/track" method="GET">
-
-      <div class="form-group">
-        <input type="text" name="phone" required>
-        <label>Enter Phone Number</label>
+    <form action="/booking/track" method="POST" class="track-form">
+      <div class="input-group">
+        <input type="tel" name="phone" placeholder="Your phone number" value="<%= phone %>" required>
+        <button type="submit"><i class="fas fa-search"></i> Track</button>
       </div>
-
-      <button type="submit" class="submit-btn">
-        Track Now
-      </button>
-
     </form>
 
+    <% if (booking) { %>
+      <div class="booking-details">
+        <div class="booking-header">
+          <span class="booking-id">#<%= booking.id %></span>
+          <span class="status status-<%= booking.status %>"><%= booking.status %></span>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <i class="fas fa-user"></i>
+            <span><strong>Name</strong> <%= booking.name %></span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-car"></i>
+            <span><strong>Vehicle</strong> <%= booking.vehicle %></span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-tools"></i>
+            <span><strong>Repair</strong> <%= booking.repair %></span>
+          </div>
+          <div class="info-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <span><strong>Address</strong> <%= booking.address %></span>
+          </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline">
+          <div class="step <%= booking.status === 'Pending' ? 'active' : 'done' %>">
+            <div class="icon"><i class="fas fa-clipboard-list"></i></div>
+            <div class="label">Request Received</div>
+          </div>
+          <div class="step <%= booking.status === 'Assigned' ? 'active' : (booking.status === 'Completed' ? 'done' : '') %>">
+            <div class="icon"><i class="fas fa-user-cog"></i></div>
+            <div class="label">Mechanic Assigned</div>
+          </div>
+          <div class="step <%= booking.status === 'Completed' ? 'active' : '' %>">
+            <div class="icon"><i class="fas fa-check-circle"></i></div>
+            <div class="label">Service Completed</div>
+          </div>
+        </div>
+
+        <% if (booking.status === 'Assigned' && booking.mechanic) { %>
+          <div class="mechanic-card">
+            <div class="mechanic-header">
+              <i class="fas fa-wrench"></i>
+              <h3>Your Mechanic</h3>
+            </div>
+            <div class="mechanic-info">
+              <p><i class="fas fa-user"></i> <%= booking.mechanic.name %></p>
+              <p><i class="fas fa-phone-alt"></i> <%= booking.mechanic.phone %></p>
+              <a href="tel:<%= booking.mechanic.phone %>" class="call-btn">
+                <i class="fas fa-phone"></i> Call Mechanic
+              </a>
+            </div>
+          </div>
+        <% } else if (booking.status === 'Completed') { %>
+          <div class="completion-message">
+            <i class="fas fa-check-circle"></i>
+            <p>Thank you for choosing TyreHub. We hope you enjoyed our service!</p>
+          </div>
+        <% } else { %>
+          <div class="pending-message">
+            <i class="fas fa-hourglass-half"></i>
+            <p>A mechanic will be assigned shortly. You'll receive an update soon.</p>
+          </div>
+        <% } %>
+
+        <% if (booking.latitude && booking.longitude) { %>
+          <div class="map-link">
+            <a href="https://maps.google.com/?q=<%= booking.latitude %>,<%= booking.longitude %>" target="_blank">
+              <i class="fas fa-map"></i> View Service Location on Map
+            </a>
+          </div>
+        <% } %>
+      </div>
+    <% } else if (phone && !booking) { %>
+      <div class="no-booking">
+        <i class="fas fa-exclamation-circle"></i>
+        <p>No booking found with that phone number. Please check and try again.</p>
+      </div>
+    <% } %>
   </div>
 </div>
 
 <%- include('partials/footer') %>
+
+<style>
+  .track-page {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    padding: 2rem;
+  }
+  .track-card {
+    background: white;
+    border-radius: 28px;
+    box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 600px;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .track-header {
+    background: linear-gradient(90deg, #1e3c72, #2a5298);
+    color: white;
+    text-align: center;
+    padding: 2rem 1.5rem;
+  }
+  .track-header i {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .track-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+  }
+  .track-header p {
+    margin: 0.5rem 0 0;
+    opacity: 0.9;
+  }
+  .track-form {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .input-group {
+    display: flex;
+    gap: 0.75rem;
+  }
+  .input-group input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 40px;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+  .input-group input:focus {
+    border-color: #2a5298;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(42,82,152,0.2);
+  }
+  .input-group button {
+    background: #2a5298;
+    border: none;
+    padding: 0 1.5rem;
+    border-radius: 40px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .input-group button:hover {
+    background: #1e3c72;
+    transform: translateY(-1px);
+  }
+  .booking-details {
+    padding: 1.5rem;
+  }
+  .booking-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .booking-id {
+    background: #f1f5f9;
+    padding: 0.25rem 0.75rem;
+    border-radius: 40px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #1e293b;
+  }
+  .status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 40px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .status-Pending {
+    background: #fef3c7;
+    color: #b45309;
+  }
+  .status-Assigned {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .status-Completed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+  .info-item i {
+    color: #2a5298;
+    width: 1.2rem;
+    margin-top: 0.2rem;
+  }
+  .info-item strong {
+    display: block;
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .info-item span {
+    line-height: 1.4;
+  }
+  .timeline {
+    display: flex;
+    justify-content: space-between;
+    margin: 2rem 0;
+    position: relative;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 1.25rem;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 0;
+  }
+  .step {
+    text-align: center;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+  }
+  .step .icon {
+    background: white;
+    width: 2.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
+    border-radius: 50%;
+    border: 2px solid #e2e8f0;
+    margin: 0 auto 0.5rem;
+    font-size: 1rem;
+    color: #94a3b8;
+  }
+  .step.done .icon {
+    border-color: #10b981;
+    background: #d1fae5;
+    color: #10b981;
+  }
+  .step.active .icon {
+    border-color: #2a5298;
+    background: #2a5298;
+    color: white;
+  }
+  .step .label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #475569;
+  }
+  .step.done .label,
+  .step.active .label {
+    color: #1e293b;
+    font-weight: 600;
+  }
+  .mechanic-card {
+    background: #f8fafc;
+    border-radius: 20px;
+    padding: 1rem;
+    margin: 1.5rem 0;
+  }
+  .mechanic-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .mechanic-header i {
+    font-size: 1.25rem;
+    color: #2a5298;
+  }
+  .mechanic-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  .mechanic-info p {
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .call-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #10b981;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 40px;
+    text-decoration: none;
+    font-weight: 500;
+    margin-top: 0.5rem;
+    transition: 0.2s;
+  }
+  .call-btn:hover {
+    background: #059669;
+  }
+  .completion-message,
+  .pending-message {
+    background: #f1f5f9;
+    border-radius: 16px;
+    padding: 1rem;
+    text-align: center;
+    margin: 1rem 0;
+  }
+  .completion-message i {
+    font-size: 2rem;
+    color: #10b981;
+    margin-bottom: 0.5rem;
+  }
+  .pending-message i {
+    font-size: 2rem;
+    color: #f59e0b;
+    margin-bottom: 0.5rem;
+  }
+  .map-link {
+    text-align: center;
+    margin-top: 1rem;
+  }
+  .map-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #2a5298;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .map-link a:hover {
+    text-decoration: underline;
+  }
+  .no-booking {
+    text-align: center;
+    padding: 2rem;
+    color: #dc2626;
+  }
+  .no-booking i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  @media (max-width: 500px) {
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+    .timeline .label {
+      font-size: 0.65rem;
+    }
+    .input-group {
+      flex-direction: column;
+    }
+    .input-group button {
+      padding: 0.75rem;
+      justify-content: center;
+    }
+  }
+</style>

@@ -1,19 +1,160 @@
 <%- include('../partials/header') %>
-<div class="container" style="max-width: 400px; padding: 2rem 0;">
-  <h2>Mechanic Login</h2>
-  <% if (error) { %>
-    <div style="color:red; margin-bottom:1rem;"><%= error %></div>
-  <% } %>
-  <form action="/mechanic/login" method="POST">
-    <div class="form-group">
-      <label>Email</label>
-      <input type="email" name="email" required>
+
+<style>
+  /* Override/add styles specifically for this page */
+  .mechanic-login-container {
+    min-height: calc(100vh - 200px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    padding: 2rem;
+  }
+  .mechanic-login-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 24px;
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 420px;
+    padding: 2rem;
+    backdrop-filter: blur(2px);
+    transition: transform 0.3s ease;
+  }
+  .mechanic-login-card:hover {
+    transform: translateY(-5px);
+  }
+  .mechanic-login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .mechanic-icon {
+    font-size: 3rem;
+    color: #2a5298;
+    background: #eef2ff;
+    width: 70px;
+    height: 70px;
+    line-height: 70px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+  .mechanic-login-header h2 {
+    font-size: 1.8rem;
+    color: #1e3c72;
+    margin: 0;
+  }
+  .mechanic-login-header p {
+    color: #666;
+    margin-top: 0.5rem;
+  }
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+  }
+  .input-icon {
+    position: relative;
+  }
+  .input-icon i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+  }
+  .input-icon input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    background: #fff;
+  }
+  .input-icon input:focus {
+    border-color: #2a5298;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+  }
+  .login-btn {
+    width: 100%;
+    background: linear-gradient(90deg, #1e3c72, #2a5298);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 0.5rem;
+  }
+  .login-btn:hover {
+    background: linear-gradient(90deg, #2a5298, #1e3c72);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  }
+  .error-message {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+  @media (max-width: 480px) {
+    .mechanic-login-card {
+      padding: 1.5rem;
+    }
+    .mechanic-login-header h2 {
+      font-size: 1.5rem;
+    }
+  }
+</style>
+
+<div class="mechanic-login-container">
+  <div class="mechanic-login-card">
+    <div class="mechanic-login-header">
+      <div class="mechanic-icon">
+        <i class="fas fa-wrench"></i>
+      </div>
+      <h2>Mechanic Login</h2>
+      <p>Access your work dashboard</p>
     </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" name="password" required>
-    </div>
-    <button type="submit">Login</button>
-  </form>
+
+    <% if (error) { %>
+      <div class="error-message">
+        <i class="fas fa-exclamation-circle"></i> <%= error %>
+      </div>
+    <% } %>
+
+    <form action="/mechanic/login" method="POST">
+      <div class="form-group">
+        <label>Email Address</label>
+        <div class="input-icon">
+          <i class="fas fa-envelope"></i>
+          <input type="email" name="email" required placeholder="mechanic@tyrehub.com">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-icon">
+          <i class="fas fa-lock"></i>
+          <input type="password" name="password" required placeholder="••••••••">
+        </div>
+      </div>
+
+      <button type="submit" class="login-btn">
+        <i class="fas fa-sign-in-alt"></i> Login
+      </button>
+    </form>
+  </div>
 </div>
+
 <%- include('../partials/footer') %>

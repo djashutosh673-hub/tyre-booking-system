@@ -1,48 +1,99 @@
-const { Tyre, Booking, Order, User } = require('../models');
+const { Booking, User, Tyre } = require('../models');
 
 exports.dashboard = async (req, res) => {
-  const tyres = await Tyre.findAll();
-  const bookings = await Booking.findAll();
-  const orders = await Order.findAll({ include: User });
-  res.render('admin/dashboard', { title: 'Admin Dashboard', tyres, bookings, orders });
+  try {
+    const totalBookings = await Booking.count();
+    const totalUsers = await User.count({ where: { role: 'user' } });
+    const totalMechanics = await User.count({ where: { role: 'mechanic' } });
+    const totalTyres = await Tyre.count();
+    const recentBookings = await Booking.findAll({
+      limit: 10,
+      order: [['createdAt', 'DESC']]
+    });
+    res.render('admin/dashboard', {
+      title: 'Admin Dashboard',
+      totalBookings,
+      totalUsers,
+      totalMechanics,
+      totalTyres,
+      recentBookings
+    });
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to load dashboard');
+    res.redirect('/');
+  }
 };
 
 exports.showAddTyre = (req, res) => {
-  res.render('admin/add-tyre', { title: 'Add Tyre' });
+  res.render('admin/add-tyre', { title: 'Add Tyre', tyre: null });
 };
 
 exports.addTyre = async (req, res) => {
-  const { brand, model, size, price, type, stock, image } = req.body;
   try {
-    await Tyre.create({ brand, model, size, price, type, stock, image });
-    req.flash('success', 'Tyre added');
+    const { brand, model, size, price, type, stock } = req.body;
+    await Tyre.create({ brand, model, size, price, type, stock });
+    req.flash('success', 'Tyre added successfully');
     res.redirect('/admin/dashboard');
   } catch (err) {
+    console.error(err);
     req.flash('error', 'Failed to add tyre');
     res.redirect('/admin/tyres/add');
   }
 };
 
 exports.showEditTyre = async (req, res) => {
-  const tyre = await Tyre.findByPk(req.params.id);
-  if (!tyre) return res.redirect('/admin/dashboard');
-  res.render('admin/edit-tyre', { title: 'Edit Tyre', tyre });
+  try {
+    const tyre = await Tyre.findByPk(req.params.id);
+    if (!tyre) {
+      req.flash('error', 'Tyre not found');
+      return res.redirect('/admin/dashboard');
+    }
+    res.render('admin/edit-tyre', { title: 'Edit Tyre', tyre });
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to load tyre');
+    res.redirect('/admin/dashboard');
+  }
 };
 
 exports.editTyre = async (req, res) => {
-  const { brand, model, size, price, type, stock, image } = req.body;
-  await Tyre.update({ brand, model, size, price, type, stock, image }, { where: { id: req.params.id } });
-  req.flash('success', 'Tyre updated');
-  res.redirect('/admin/dashboard');
+  try {
+    const { brand, model, size, price, type, stock } = req.body;
+    await Tyre.update(
+      { brand, model, size, price, type, stock },
+      { where: { id: req.params.id } }
+    );
+    req.flash('success', 'Tyre updated successfully');
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to update tyre');
+    res.redirect(`/admin/tyres/edit/${req.params.id}`);
+  }
 };
 
 exports.deleteTyre = async (req, res) => {
-  await Tyre.destroy({ where: { id: req.params.id } });
-  req.flash('success', 'Tyre deleted');
-  res.redirect('/admin/dashboard');
+  try {
+    await Tyre.destroy({ where: { id: req.params.id } });
+    req.flash('success', 'Tyre deleted successfully');
+    res.redirect('/admin/dashboard');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to delete tyre');
+    res.redirect('/admin/dashboard');
+  }
 };
 
 exports.viewBookings = async (req, res) => {
-  const bookings = await Booking.findAll();
-  res.render('admin/bookings', { title: 'Manage Bookings', bookings });
+  try {
+    const bookings = await Booking.findAll({
+      order: [['createdAt', 'DESC']]
+    });
+    res.render('admin/bookings', { title: 'All Bookings', bookings });
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to load bookings');
+    res.redirect('/admin/dashboard');
+  }
 };

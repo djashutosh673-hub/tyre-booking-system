@@ -1,3 +1,4 @@
+process.removeAllListeners('warning');
 const express = require('express');
 const session = require('express-session');
 const flash = require('connect-flash');
@@ -42,6 +43,7 @@ app.use('/booking', require('./routes/bookingRoutes'));
 // 404 handler
 app.use((req, res) => {
   res.status(404).render('404', { title: 'Page Not Found' });
+
 });
 
 // Sync database and start server

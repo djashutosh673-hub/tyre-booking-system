@@ -1,15 +1,19 @@
-const { DataTypes } = require('sequelize');
-
-module.exports = (sequelize) => {
-  return sequelize.define('Booking', {
+module.exports = (sequelize, DataTypes) => {
+  const Booking = sequelize.define('Booking', {
     name: { type: DataTypes.STRING, allowNull: false },
     vehicle: { type: DataTypes.STRING, allowNull: false },
     repair: { type: DataTypes.STRING, allowNull: false },
     phone: { type: DataTypes.STRING, allowNull: false },
-    address: { type: DataTypes.TEXT },
-    latitude: { type: DataTypes.DECIMAL(10, 8), allowNull: true },
-    longitude: { type: DataTypes.DECIMAL(11, 8), allowNull: true },
-    status: { type: DataTypes.ENUM('Pending', 'Assigned', 'Completed'), defaultValue: 'Pending' },
-    mechanicId: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'Users', key: 'id' } }
+    address: { type: DataTypes.TEXT, allowNull: false },
+    status: { type: DataTypes.STRING, defaultValue: 'Pending' },
+    latitude: { type: DataTypes.FLOAT, allowNull: true },
+    longitude: { type: DataTypes.FLOAT, allowNull: true },
+    mechanicId: { type: DataTypes.INTEGER, allowNull: true },
   });
+
+  Booking.associate = (models) => {
+    Booking.belongsTo(models.User, { as: 'mechanic', foreignKey: 'mechanicId' });
+  };
+
+  return Booking;
 };

@@ -1,0 +1,96 @@
+<%- include('../partials/header') %>
+
+<div class="admin-container">
+  <h1>All Bookings</h1>
+  <a href="/admin/dashboard" class="back-link">← Back to Dashboard</a>
+
+  <div class="bookings-table">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Vehicle</th>
+          <th>Repair</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (bookings && bookings.length > 0) { %>
+          <% bookings.forEach(booking => { %>
+            <tr>
+              <td><%= booking.id %></td>
+              <td><%= booking.name %></td>
+              <td><%= booking.vehicle %></td>
+              <td><%= booking.repair %></td>
+              <td><%= booking.phone %></td>
+              <td><%= booking.address %></td>
+              <td><span class="status-badge status-<%= booking.status %>"><%= booking.status %></span></td>
+              <td><%= new Date(booking.createdAt).toLocaleDateString() %></td>
+            </tr>
+          <% }) %>
+        <% } else { %>
+          <tr><td colspan="8">No bookings found.</td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<style>
+  .admin-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+  .back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: #2a5298;
+    text-decoration: none;
+  }
+  .back-link:hover {
+    text-decoration: underline;
+  }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+  .admin-table th,
+  .admin-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .admin-table th {
+    background: #f8fafc;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .status-Pending {
+    background: #fef3c7;
+    color: #b45309;
+  }
+  .status-Assigned {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+  .status-Completed {
+    background: #d1fae5;
+    color: #065f46;
+  }
+</style>
