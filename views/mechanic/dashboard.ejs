@@ -67,44 +67,48 @@
           </thead>
           <tbody>
             <% serviceBookings.forEach(booking => { %>
-            <tr>
-              <td data-label="ID">#<%= booking.id %></td>
-              <td data-label="Customer"><%= booking.name %></td>
-              <td data-label="Vehicle"><%= booking.vehicle %></td>
-              <td data-label="Repair"><%= booking.repair %></td>
-              <td data-label="Phone"><%= booking.phone %></td>
-              <td data-label="Location">
-                <% if(booking.latitude && booking.longitude) { %>
-                  <a href="https://maps.google.com/?q=<%= booking.latitude %>,<%= booking.longitude %>" target="_blank" class="map-link">
-                    <i class="fas fa-map-marker-alt"></i> View Map
-                  </a>
-                <% } else { %>
-                  <span class="no-location">Not provided</span>
-                <% } %>
-              </td>
-              <td data-label="Status">
-                <span class="status-badge status-<%= booking.status.toLowerCase() %>"><%= booking.status %></span>
-              </td>
-              <td data-label="Action">
-                <% if(booking.status === 'Pending') { %>
-                  <form action="/mechanic/assign/<%= booking.id %>" method="POST">
-                    <button type="submit" class="action-btn assign">
-                      <i class="fas fa-user-check"></i> Accept
-                    </button>
-                  </form>
-                <% } else if(booking.status === 'Assigned' && booking.mechanicId == user.id) { %>
-                  <form action="/mechanic/complete/<%= booking.id %>" method="POST">
-                    <button type="submit" class="action-btn complete">
-                      <i class="fas fa-check-circle"></i> Complete
-                    </button>
-                  </form>
-                <% } else if(booking.status === 'Completed') { %>
-                  <span class="done-badge">✅ Done</span>
-                <% } else { %>
-                  <span class="assigned-else">Assigned to other</span>
-                <% } %>
-              </td>
-            </tr>
+              <tr>
+                <td data-label="ID">#<%= booking.id %></td>
+                <td data-label="Customer"><%= booking.name %></td>
+                <td data-label="Vehicle"><%= booking.vehicle %></td>
+                <td data-label="Repair"><%= booking.repair %></td>
+                <td data-label="Phone"><%= booking.phone %></td>
+                <td data-label="Location">
+                  <% if(booking.latitude && booking.longitude) { %>
+                    <a href="https://maps.google.com/?q=<%= booking.latitude %>,<%= booking.longitude %>" target="_blank" class="nav-link">
+                      <i class="fas fa-map-marker-alt"></i> Navigate
+                    </a>
+                  <% } else if(booking.address) { %>
+                    <a href="https://maps.google.com/?q=<%= encodeURIComponent(booking.address) %>" target="_blank" class="nav-link">
+                      <i class="fas fa-map-marker-alt"></i> Navigate
+                    </a>
+                  <% } else { %>
+                    <span class="no-location">Not provided</span>
+                  <% } %>
+                </td>
+                <td data-label="Status">
+                  <span class="status-badge status-<%= booking.status.toLowerCase() %>"><%= booking.status %></span>
+                </td>
+                <td data-label="Action">
+                  <% if(booking.status === 'Pending') { %>
+                    <form action="/mechanic/assign/<%= booking.id %>" method="POST">
+                      <button type="submit" class="action-btn assign">
+                        <i class="fas fa-user-check"></i> Accept
+                      </button>
+                    </form>
+                  <% } else if(booking.status === 'Assigned' && booking.mechanicId == user.id) { %>
+                    <form action="/mechanic/complete/<%= booking.id %>" method="POST">
+                      <button type="submit" class="action-btn complete">
+                        <i class="fas fa-check-circle"></i> Complete
+                      </button>
+                    </form>
+                  <% } else if(booking.status === 'Completed') { %>
+                    <span class="done-badge">✅ Done</span>
+                  <% } else { %>
+                    <span class="assigned-else">Assigned to other</span>
+                  <% } %>
+                </td>
+              </tr>
             <% }) %>
           </tbody>
         </table>
@@ -141,40 +145,52 @@
           </thead>
           <tbody>
             <% deliveryOrders.forEach(order => { %>
-            <tr>
-              <td data-label="Order ID">#<%= order.id %></td>
-              <td data-label="Customer"><%= order.customerName %></td>
-              <td data-label="Phone"><%= order.customerPhone %></td>
-              <td data-label="Address" class="address-cell"><%= order.deliveryAddress %></td>
-              <td data-label="Items" class="items-cell">
-                <% order.items.forEach((item, idx) => { %>
-                  <div><%= item.name %> x<%= item.quantity %></div>
-                <% }) %>
-              </td>
-              <td data-label="Total">₹<%= order.total %></td>
-              <td data-label="Status">
-                <span class="status-badge status-<%= order.deliveryStatus.toLowerCase() %>"><%= order.deliveryStatus %></span>
-              </td>
-              <td data-label="Action">
-                <% if(order.deliveryStatus === 'Pending') { %>
-                  <form action="/mechanic/assign-delivery/<%= order.id %>" method="POST">
-                    <button type="submit" class="action-btn assign">
-                      <i class="fas fa-user-check"></i> Accept
-                    </button>
-                  </form>
-                <% } else if(order.deliveryStatus === 'Assigned' && order.assignedMechanicId == user.id) { %>
-                  <form action="/mechanic/complete-delivery/<%= order.id %>" method="POST">
-                    <button type="submit" class="action-btn complete">
-                      <i class="fas fa-check-circle"></i> Complete
-                    </button>
-                  </form>
-                <% } else if(order.deliveryStatus === 'Completed') { %>
-                  <span class="done-badge">✅ Delivered</span>
-                <% } else { %>
-                  <span class="assigned-else">Assigned to other</span>
-                <% } %>
-              </td>
-            </tr>
+              <tr>
+                <td data-label="Order ID">#<%= order.id %></td>
+                <td data-label="Customer"><%= order.customerName %></td>
+                <td data-label="Phone"><%= order.customerPhone %></td>
+                <td data-label="Address" class="address-cell"><%= order.deliveryAddress %></td>
+                <td data-label="Items" class="items-cell">
+                  <% order.items.forEach((item, idx) => { %>
+                    <div><%= item.name %> x<%= item.quantity %></div>
+                  <% }) %>
+                </td>
+                <td data-label="Total">₹<%= order.total %></td>
+                <td data-label="Status">
+                  <span class="status-badge status-<%= order.deliveryStatus.toLowerCase() %>"><%= order.deliveryStatus %></span>
+                </td>
+                <td data-label="Action">
+                  <% if(order.deliveryStatus === 'Pending') { %>
+                    <form action="/mechanic/assign-delivery/<%= order.id %>" method="POST">
+                      <button type="submit" class="action-btn assign">
+                        <i class="fas fa-user-check"></i> Accept
+                      </button>
+                    </form>
+                  <% } else if(order.deliveryStatus === 'Assigned' && order.assignedMechanicId == user.id) { %>
+                    <form action="/mechanic/complete-delivery/<%= order.id %>" method="POST">
+                      <button type="submit" class="action-btn complete">
+                        <i class="fas fa-check-circle"></i> Complete
+                      </button>
+                    </form>
+                  <% } else if(order.deliveryStatus === 'Completed') { %>
+                    <span class="done-badge">✅ Delivered</span>
+                  <% } else { %>
+                    <span class="assigned-else">Assigned to other</span>
+                  <% } %>
+                  <!-- Navigation button for delivery orders -->
+                  <% if(order.latitude && order.longitude) { %>
+                    <a href="https://maps.google.com/?q=<%= order.latitude %>,<%= order.longitude %>" target="_blank" class="nav-link small">
+                      <i class="fas fa-map-marker-alt"></i> Navigate
+                    </a>
+                  <% } else if(order.deliveryAddress) { %>
+                    <a href="https://maps.google.com/?q=<%= encodeURIComponent(order.deliveryAddress) %>" target="_blank" class="nav-link small">
+                      <i class="fas fa-map-marker-alt"></i> Navigate
+                    </a>
+                  <% } else { %>
+                    <span class="no-location">No location</span>
+                  <% } %>
+                </td>
+              </tr>
             <% }) %>
           </tbody>
         </table>
@@ -427,15 +443,28 @@
     font-size: 0.75rem;
     color: var(--gray-600);
   }
-  .map-link {
-    color: var(--primary);
-    text-decoration: none;
+
+  /* Navigation link/button */
+  .nav-link {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
+    background: #e2e8f0;
+    color: #1e293b;
+    text-decoration: none;
+    padding: 0.3rem 0.75rem;
+    border-radius: 30px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: all 0.2s;
   }
-  .map-link:hover {
-    text-decoration: underline;
+  .nav-link:hover {
+    background: #cbd5e1;
+    transform: translateY(-1px);
+  }
+  .nav-link.small {
+    margin-top: 0.5rem;
+    display: inline-flex;
   }
   .no-location {
     color: var(--gray-300);
@@ -497,6 +526,9 @@
     }
     .stat-content h3 {
       font-size: 1.4rem;
+    }
+    .nav-link.small {
+      margin-top: 0;
     }
   }
 </style>
